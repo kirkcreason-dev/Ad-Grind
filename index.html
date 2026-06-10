@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#160F1C" />
+<title>Ad Grind</title>
+
+<!-- ============================================================
+     AD GRIND — v1
+     Closed-loop points economy. Watch ads -> earn points -> spend
+     on cosmetics/unlocks. No cash, no gift cards, no cashout.
+     Rewards catalog (redeem points for PHYSICAL goods) is in the
+     Rewards tab, behind FEATURES.rewards.
+
+     SETUP (3 things, all marked with  >>> CONFIG  below):
+       1. Paste your Firebase web config            (>>> CONFIG 1)
+       2. Paste your AdMob rewarded ad unit IDs      (>>> CONFIG 2)
+       3. Tune the economy if you want               (>>> CONFIG 3)
+     Until you add Firebase config it runs in LOCAL MODE so you can
+     deploy to GitHub Pages and click through it right away.
+     ============================================================ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#160F1C;
+    --surface:#221730;
+    --surface-2:#2D2040;
+    --line:#3A2C4A;
+    --gold:#FFC24B;
+    --gold-dim:#A8853A;
+    --coral:#FF5470;
+    --coral-press:#E63E5C;
+    --text:#EFE7F5;
+    --muted:#9685A6;
+    --good:#5AD1B0;
+    --radius:18px;
+    --tab-h:72px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.5;
+    overflow:hidden;
+  }
+
+  /* radial atmosphere behind everything */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(255,84,112,.10), transparent 60%),
+      radial-gradient(90% 60% at 50% 0%, rgba(255,194,75,.07), transparent 55%);
+  }
+
+  .app{position:relative;z-index:1;height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column}
+
+  /* ---------- top bar: persistent points odometer (the signature) ---------- */
+  .topbar{
+    flex:0 0 auto;padding:18px 20px 10px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding-top:max(18px, env(safe-area-inset-top));
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .brand .dot{width:11px;height:11px;border-radius:3px;background:var(--coral);box-shadow:0 0 14px var(--coral)}
+  .brand small{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-family:'Inter'}
+
+  .balance{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);padding:8px 14px;border-radius:999px;position:relative;overflow:visible}
+  .balance .coin{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%, #FFE6A8, var(--gold) 60%, var(--gold-dim));box-shadow:0 0 10px rgba(255,194,75,.5)}
+  .balance .val{font-family:'Space Mono',monospace;font-weight:700;font-size:16px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+
+  /* ---------- view container ---------- */
+  .views{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 20px calc(var(--tab-h) + 24px)}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- GRIND hero ---------- */
+  .hero{text-align:center;padding:14px 0 6px}
+  .hero .eyebrow{color:var(--muted);font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+  .counter-wrap{position:relative;margin:6px 0 2px;display:inline-block}
+  .counter{
+    font-family:'Space Mono',monospace;font-weight:700;
+    font-size:clamp(56px,18vw,84px);line-height:1;letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,#FFE6A8,var(--gold) 65%,var(--gold-dim));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    transition:transform .12s ease;
+  }
+  .counter.pulse{transform:scale(1.06)}
+  .counter-glow{position:absolute;inset:-30% -10%;z-index:-1;border-radius:50%;background:radial-gradient(circle,rgba(255,194,75,.35),transparent 70%);opacity:0;transition:opacity .3s}
+  .counter-glow.on{opacity:1}
+  .hero .unit{color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+
+  .floatchip{
+    position:absolute;left:50%;top:0;transform:translateX(-50%);
+    font-family:'Space Mono',monospace;font-weight:700;font-size:24px;color:var(--gold);
+    pointer-events:none;opacity:0;
+  }
+  .floatchip.go{animation:floatup 1s ease forwards}
+  @keyframes floatup{
+    0%{opacity:0;transform:translate(-50%,10px) scale(.8)}
+    20%{opacity:1}
+    100%{opacity:0;transform:translate(-50%,-46px) scale(1.1)}
+  }
+
+  /* big grind button */
+  .grind-btn{
+    width:100%;margin-top:22px;border:none;cursor:pointer;
+    background:linear-gradient(180deg,var(--coral),var(--coral-press));
+    color:#fff;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:20px;
+    padding:20px;border-radius:var(--radius);
+    box-shadow:0 10px 30px rgba(255,84,112,.32), inset 0 1px 0 rgba(255,255,255,.18);
+    transition:transform .1s ease, box-shadow .2s, opacity .2s;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+  }
+  .grind-btn:active{transform:translateY(2px);box-shadow:0 4px 14px rgba(255,84,112,.3)}
+  .grind-btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+  .grind-btn .sub{font-family:'Space Mono';font-weight:700;font-size:13px;opacity:.9}
+
+  .meter{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .meter .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .meter .label{color:var(--muted);font-size:13px;font-weight:500}
+  .meter .num{font-family:'Space Mono';font-weight:700;font-size:14px}
+  .bar{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--coral));border-radius:99px;transition:width .4s ease}
+
+  .hint{color:var(--muted);font-size:12.5px;text-align:center;margin-top:16px;line-height:1.55}
+
+  /* ---------- section heading ---------- */
+  .sec-head{font-family:'Bricolage Grotesque';font-weight:800;font-size:26px;letter-spacing:-.02em;margin:14px 0 4px}
+  .sec-sub{color:var(--muted);font-size:13.5px;margin-bottom:16px}
+
+  /* ---------- shop grid ---------- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+  }
+  .card .swatch{height:62px;border-radius:12px;margin-bottom:6px;border:1px solid rgba(255,255,255,.06)}
+  .card .name{font-weight:600;font-size:15px}
+  .card .desc{color:var(--muted);font-size:12px;flex:1}
+  .card .price{display:flex;align-items:center;gap:6px;font-family:'Space Mono';font-weight:700;font-size:14px;color:var(--gold)}
+  .card .price .coin{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE6A8,var(--gold) 60%,var(--gold-dim))}
+  .buy{
+    margin-top:8px;border:1px solid var(--coral);background:transparent;color:var(--coral);
+    font-weight:700;font-size:13px;padding:9px;border-radius:11px;cursor:pointer;
+    font-family:'Inter';transition:background .15s,color .15s,transform .1s;
+  }
+  .buy:active{transform:translateY(1px)}
+  .buy:hover{background:var(--coral);color:#fff}
+  .buy.owned{border-color:var(--line);color:var(--muted);cursor:default}
+  .buy.owned:hover{background:transparent;color:var(--muted)}
+  .buy.equipped{border-color:var(--good);color:var(--good)}
+  .buy:disabled:not(.owned){opacity:.4;cursor:not-allowed}
+  .buy:disabled:not(.owned):hover{background:transparent;color:var(--coral)}
+  .tag{position:absolute;top:10px;right:10px;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+
+  /* ---------- empty state ---------- */
+  .empty{text-align:center;padding:48px 20px;color:var(--muted)}
+  .empty .big{font-family:'Bricolage Grotesque';font-weight:700;font-size:20px;color:var(--text);margin-bottom:6px}
+
+  /* ---------- profile ---------- */
+  .stat-row{display:flex;gap:12px;margin-bottom:12px}
+  .stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .stat .k{color:var(--muted);font-size:12px;font-weight:500;margin-bottom:6px}
+  .stat .v{font-family:'Space Mono';font-weight:700;font-size:24px;color:var(--gold)}
+  .profile-id{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:4px}
+  .profile-id .k{color:var(--muted);font-size:12px;margin-bottom:4px}
+  .profile-id .v{font-family:'Space Mono';font-size:12.5px;word-break:break-all;color:var(--text)}
+  .ghost-btn{width:100%;margin-top:16px;background:var(--surface);border:1px solid var(--line);color:var(--text);font-weight:600;font-size:14px;padding:14px;border-radius:14px;cursor:pointer;font-family:'Inter'}
+  .ghost-btn:active{transform:translateY(1px)}
+  .modepill{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:6px 12px;border-radius:99px;margin-top:18px}
+  .modepill i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+  .modepill.live i{background:var(--good);box-shadow:0 0 8px var(--good)}
+
+  /* ---------- bottom tab bar ---------- */
+  .tabs{
+    position:fixed;bottom:0;left:0;right:0;z-index:5;max-width:520px;margin:0 auto;
+    height:var(--tab-h);padding-bottom:env(safe-area-inset-bottom);
+    background:rgba(22,15,28,.92);backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);
+    display:flex;align-items:stretch;
+  }
+  .tab{flex:1;border:none;background:none;cursor:pointer;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:'Inter';font-size:11px;font-weight:600;transition:color .15s}
+  .tab svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tab.active{color:var(--gold)}
+  .tab.active svg{fill:rgba(255,194,75,.14)}
+
+  /* ---------- ad modal ---------- */
+  .scrim{position:fixed;inset:0;z-index:50;background:rgba(8,5,12,.86);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px}
+  .scrim.show{display:flex}
+  .ad{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:28px;text-align:center;animation:pop .3s ease}
+  @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+  .ad .badge{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .ad .fake{margin:18px 0;height:150px;border-radius:14px;background:linear-gradient(135deg,#3a2c4a,#2d2040);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border:1px dashed var(--line)}
+  .ad .fake .play{width:54px;height:54px;border-radius:50%;background:var(--coral);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(255,84,112,.5)}
+  .ad .fake .play svg{width:22px;height:22px;fill:#fff;margin-left:3px}
+  .ad .fake .cap{color:var(--muted);font-size:11px}
+  .ad .count{font-family:'Space Mono';font-weight:700;font-size:40px;color:var(--gold)}
+  .ad .countlabel{color:var(--muted);font-size:12px;margin-top:2px}
+  .ad .reward{margin-top:16px;font-weight:600;font-size:14px}
+  .ad .reward b{color:var(--gold);font-family:'Space Mono'}
+  .ad .closebtn{margin-top:20px;width:100%;border:none;background:var(--coral);color:#fff;font-weight:700;font-size:15px;padding:15px;border-radius:13px;cursor:pointer;font-family:'Inter'}
+  .ad .closebtn:disabled{opacity:.45;cursor:not-allowed}
+
+  /* ---------- toast ---------- */
+  .toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + 18px);transform:translateX(-50%) translateY(20px);z-index:60;background:var(--surface-2);border:1px solid var(--line);color:var(--text);padding:12px 18px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:all .3s ease;pointer-events:none;max-width:90%;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---------- anchored banner (Shop/Stuff/Profile only) ---------- */
+  .banner{
+    position:fixed;left:0;right:0;z-index:4;max-width:520px;margin:0 auto;
+    bottom:calc(var(--tab-h) + env(safe-area-inset-bottom));
+    height:56px;display:none;align-items:center;justify-content:center;gap:8px;
+    background:var(--surface);border-top:1px solid var(--line);
+  }
+  .banner.show{display:flex}
+  .banner .label{position:absolute;top:3px;left:8px;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .banner .fill{font-family:'Space Mono';font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .banner .fill .box{width:30px;height:30px;border-radius:6px;background:linear-gradient(135deg,var(--surface-2),var(--line))}
+  body.banner-on .views{padding-bottom:calc(var(--tab-h) + 56px + 24px)}
+
+  /* ---------- native ad card (in shop grid) ---------- */
+  .card.native{border-style:dashed;border-color:var(--gold-dim);background:linear-gradient(180deg,var(--surface),#241a30)}
+  .card.native .tag{background:var(--gold);color:#1a1320}
+  .card.native .creative{height:62px;border-radius:12px;margin-bottom:6px;background:linear-gradient(135deg,var(--surface-2),var(--line));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;font-family:'Space Mono'}
+  .card.native .adcta{margin-top:8px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);font-weight:700;font-size:13px;padding:9px;border-radius:11px;cursor:pointer;font-family:'Inter';text-align:center}
+
+  /* ---------- rewards catalog ---------- */
+  .card .reward-art{height:72px;border-radius:12px;margin-bottom:6px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:38px}
+  .card .pts{display:flex;align-items:center;gap:6px;font-family:'Space Mono';font-weight:700;font-size:14px;color:var(--gold)}
+  .card .pts .coin{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE6A8,var(--gold) 60%,var(--gold-dim))}
+  .card .arv{color:var(--muted);font-size:10.5px;margin-top:2px}
+  .redeem{margin-top:8px;border:1px solid var(--coral);background:transparent;color:var(--coral);font-weight:700;font-size:13px;padding:9px;border-radius:11px;cursor:pointer;font-family:'Inter';transition:background .15s,color .15s,transform .1s}
+  .redeem:hover:not(:disabled){background:var(--coral);color:#fff}
+  .redeem:active{transform:translateY(1px)}
+  .redeem:disabled{opacity:.4;cursor:not-allowed}
+  .redemptions{margin-top:22px}
+  .redemptions h3{font-family:'Bricolage Grotesque';font-weight:700;font-size:16px;margin-bottom:10px}
+  .redemption{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+  .redemption .ra{font-size:24px}
+  .redemption .rn{flex:1;font-weight:600;font-size:14px}
+  .redemption .rs{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);background:var(--surface-2);padding:4px 9px;border-radius:7px}
+  .legal-line{color:var(--muted);font-size:11.5px;line-height:1.6;margin-top:18px;text-align:center}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- top bar -->
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>Ad Grind</div>
+    <div class="balance" id="balancePill">
+      <span class="coin"></span>
+      <span class="val" id="balVal">0</span>
+    </div>
+  </header>
+
+  <main class="views">
+
+    <!-- ============ GRIND ============ -->
+    <section class="view active" id="view-grind">
+      <div class="hero">
+        <div class="eyebrow">Your points</div>
+        <div class="counter-wrap">
+          <div class="counter-glow" id="glow"></div>
+          <div class="counter" id="counter">0</div>
+          <div class="floatchip" id="floatchip">+0</div>
+        </div>
+        <div class="unit">points banked</div>
+      </div>
+
+      <button class="grind-btn" id="grindBtn">
+        Watch an ad
+        <span class="sub" id="grindSub">+10 pts</span>
+      </button>
+
+      <div class="meter">
+        <div class="row">
+          <span class="label">Today's grind</span>
+          <span class="num"><span id="todayCount">0</span> / <span id="dailyCap">50</span> ads</span>
+        </div>
+        <div class="bar"><i id="dailyBar" style="width:0%"></i></div>
+      </div>
+
+      <p class="hint" id="grindHint">Tap to watch a rewarded ad and bank points. Spend them in the Shop.</p>
+    </section>
+
+    <!-- ============ SHOP ============ -->
+    <section class="view" id="view-shop">
+      <h2 class="sec-head">Shop</h2>
+      <p class="sec-sub">Spend points on themes, badges, and unlocks. All in-app — no cash, no cashout.</p>
+      <div class="grid" id="shopGrid"></div>
+    </section>
+
+    <!-- ============ STUFF ============ -->
+    <section class="view" id="view-stuff">
+      <h2 class="sec-head">My stuff</h2>
+      <p class="sec-sub">Everything you've unlocked. Tap a theme to equip it.</p>
+      <div class="grid" id="stuffGrid"></div>
+      <div class="empty" id="stuffEmpty" style="display:none">
+        <div class="big">Nothing yet</div>
+        Grind some ads, then grab your first unlock in the Shop.
+      </div>
+    </section>
+
+    <!-- ============ PRIZES (draw) ============ -->
+    <section class="view" id="view-prizes">
+      <h2 class="sec-head">Rewards</h2>
+      <p class="sec-sub">Redeem points for real gear. Items ship to you — no cash, no gift cards.</p>
+      <div class="grid" id="rewardsGrid"></div>
+
+      <div id="redemptionList"></div>
+
+      <p class="legal-line">
+        Rewards are physical merchandise shipped to US addresses. After you redeem,
+        we'll reach out to confirm your shipping details. Allow time for fulfillment.
+      </p>
+    </section>
+
+    <section class="view" id="view-profile">
+      <h2 class="sec-head">Profile</h2>
+      <p class="sec-sub">Your grind, all time.</p>
+      <div class="stat-row">
+        <div class="stat"><div class="k">Lifetime points</div><div class="v" id="statLifetime">0</div></div>
+        <div class="stat"><div class="k">Ads watched</div><div class="v" id="statAds">0</div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="k">Current balance</div><div class="v" id="statBal">0</div></div>
+        <div class="stat"><div class="k">Items owned</div><div class="v" id="statItems">0</div></div>
+      </div>
+      <div class="profile-id">
+        <div class="k">Player ID</div>
+        <div class="v" id="playerId">—</div>
+      </div>
+      <div class="modepill" id="modePill"><i></i><span id="modeText">Local mode — add Firebase to save progress</span></div>
+    </section>
+
+  </main>
+
+  <!-- bottom tabs -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="grind">
+      <svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      Grind
+    </button>
+    <button class="tab" data-tab="shop">
+      <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      Shop
+    </button>
+    <button class="tab" data-tab="stuff">
+      <svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/></svg>
+      Stuff
+    </button>
+    <button class="tab" data-tab="prizes" id="tabPrizes">
+      <svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7S9 7 8 5.5 9 3 12 7zm0 0s3 0 4-1.5S15 3 12 7z"/></svg>
+      Rewards
+    </button>
+    <button class="tab" data-tab="profile">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      Profile
+    </button>
+  </nav>
+
+  <!-- anchored banner (shown on Shop/Stuff/Profile) -->
+  <div class="banner" id="banner">
+    <span class="label">Ad</span>
+    <div class="fill"><span class="box"></span>Banner ad — 320×50</div>
+  </div>
+</div>
+
+<!-- ad modal -->
+<div class="scrim" id="adScrim">
+  <div class="ad">
+    <div class="badge">Rewarded Ad</div>
+    <div class="fake">
+      <div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="cap">Sponsored</div>
+    </div>
+    <div class="count" id="adCount">5</div>
+    <div class="countlabel">seconds left</div>
+    <div class="reward">Reward: <b id="adReward">+10 pts</b></div>
+    <button class="closebtn" id="adClose" disabled>Watch to earn</button>
+  </div>
+</div>
+
+<!-- reusable full-screen ad (interstitial + app open) -->
+<div class="scrim" id="fsScrim">
+  <div class="ad">
+    <div class="badge" id="fsLabel">Sponsored</div>
+    <div class="fake">
+      <div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+      <div class="cap">Sponsored</div>
+    </div>
+    <div class="count" id="fsCount">5</div>
+    <div class="countlabel">seconds</div>
+    <button class="closebtn" id="fsClose" disabled>Skip in 5</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase compat SDK (only used if you add config below) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+/* ============================================================
+   >>> CONFIG 1 — FIREBASE
+   Paste your Firebase web app config here. Leave the apiKey as
+   "PASTE_..." to keep running in local mode (no saving) for now.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_FIREBASE_API_KEY",
+  authDomain: "PASTE.firebaseapp.com",
+  projectId: "PASTE",
+  storageBucket: "PASTE.appspot.com",
+  messagingSenderId: "PASTE",
+  appId: "PASTE"
+};
+
+/* ============================================================
+   >>> CONFIG 2 — ADMOB (used only inside the native wrapper)
+   Ad unit IDs per format. The web build can't show AdMob ads, so it
+   plays simulated ones. When you wrap this in your native shell,
+   expose a window.AdMobBridge with these methods and they'll be used
+   automatically (web fallback otherwise):
+
+     AdMobBridge.showRewarded(onReward, onDismiss)
+     AdMobBridge.showInterstitial(onDone)
+     AdMobBridge.showAppOpen(onDone)
+     AdMobBridge.showBanner(position)   // "bottom"
+     AdMobBridge.hideBanner()
+   ============================================================ */
+const ADMOB = {
+  rewardedAndroid:     "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  rewardediOS:         "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  interstitialAndroid: "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  interstitialiOS:     "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  appOpenAndroid:      "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  appOpeniOS:          "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  bannerAndroid:       "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  banneriOS:           "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  nativeAndroid:       "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX",
+  nativeiOS:           "ca-app-pub-XXXXXXXXXXXX/XXXXXXXXXX"
+};
+
+/* ============================================================
+   >>> CONFIG 3 — ECONOMY  (tune freely)
+   ============================================================ */
+const ECON = {
+  pointsPerAd: 10,
+  dailyAdCap: 50,        // caps abuse + your ad-fill exposure
+  adLengthSec: 5         // simulated ad length (web only)
+};
+
+/* ============================================================
+   >>> FEATURE FLAGS
+   ============================================================ */
+const FEATURES = { rewards: true };   // redemption catalog ON
+
+/* ============================================================
+   >>> REWARDS CATALOG  (redeem points for PHYSICAL goods only)
+   Physical hardware/merch (Xbox, shirts, gear) is fine with AdMob —
+   it is NOT a cash-equivalent. NEVER add gift cards, cash, PayPal,
+   or crypto here; that flips it back into a banned cashout.
+
+   Keep a real range: cheap, attainable items at the bottom and the
+   aspirational Xbox at the top. A catalog that's ONLY an unreachable
+   carrot reads as a deceptive pattern and risks app-store removal —
+   tiers (like airline miles) are what keep it legitimate.
+
+   You fulfill these yourself: a redemption creates a request you ship
+   against. Costs below are points. (1,000,000 pts = the Xbox.)
+   ============================================================ */
+const REWARDS = [
+  { id:"stickers",   name:"Sticker pack",     desc:"Creaso / Norse vinyl stickers.", cost:2000,    art:"🏷️", valueUSD:5   },
+  { id:"tee",        name:"Logo tee",         desc:"Printed shirt, shipped to you.", cost:25000,   art:"👕", valueUSD:20  },
+  { id:"hoodie",     name:"Heavyweight hoodie", desc:"Embroidered logo hoodie.",     cost:60000,   art:"🧥", valueUSD:45  },
+  { id:"controller", name:"Xbox controller",  desc:"Wireless controller.",           cost:120000,  art:"🎮", valueUSD:60  },
+  { id:"giftbox",    name:"Norse swag box",   desc:"Tee + stickers + extras bundle.",cost:200000,  art:"📦", valueUSD:90  },
+  { id:"xbox",       name:"Xbox Series X",    desc:"The big one. Brand new, shipped.",cost:1000000, art:"🕹️", valueUSD:500 }
+];
+
+/* ============================================================
+   >>> AD PLACEMENT + FREQUENCY CAPS  (compliant defaults — tune
+   carefully; loosening these is what gets accounts flagged)
+   ============================================================ */
+const ADS = {
+  bannerScreens: ["shop","stuff","profile"],  // never on the Grind hero
+  interstitialEveryNRewarded: 5,   // arm after this many rewarded watches
+  interstitialMinGapSec: 75,       // never closer together than this
+  appOpenColdStart: true,          // show once when app launches
+  appOpenMinBackgroundSec: 240,    // re-show only after 4+ min backgrounded
+  nativeEveryNItems: 6,            // 1 labeled native card per N shop items
+  fullscreenLenSec: 5              // simulated full-screen length (web only)
+};
+
+/* ---- Starter catalog (closed-loop items only). Move to a
+   Firestore "catalog" collection later if you want a remote-editable
+   shop; hardcoded here so the app works on day one. ---- */
+const CATALOG = [
+  { id:"theme_ember",  type:"theme", name:"Ember",      desc:"Coral + ember dark theme.",  cost:150,  tag:"Theme", colors:{coral:"#FF5470", gold:"#FFC24B"}, swatch:"linear-gradient(135deg,#FF5470,#FFC24B)" },
+  { id:"theme_toxic",  type:"theme", name:"Toxic",      desc:"Acid green high-contrast.",   cost:300,  tag:"Theme", colors:{coral:"#9DFF3C", gold:"#C6FF6A"}, swatch:"linear-gradient(135deg,#9DFF3C,#1f3b12)" },
+  { id:"theme_frost",  type:"theme", name:"Frost",      desc:"Icy blue + cyan accents.",    cost:300,  tag:"Theme", colors:{coral:"#54C9FF", gold:"#7BE0FF"}, swatch:"linear-gradient(135deg,#54C9FF,#1b3a52)" },
+  { id:"theme_royal",  type:"theme", name:"Royal",      desc:"Gold on deep violet.",        cost:500,  tag:"Theme", colors:{coral:"#B673FF", gold:"#FFD86B"}, swatch:"linear-gradient(135deg,#FFD86B,#6a3bb3)" },
+  { id:"badge_starter",type:"badge", name:"Day One",    desc:"Proof you were here early.",  cost:100,  tag:"Badge", swatch:"radial-gradient(circle at 40% 35%,#FFE6A8,#FFC24B 70%,#A8853A)" },
+  { id:"badge_grinder",type:"badge", name:"Grinder",    desc:"For the dedicated.",          cost:800,  tag:"Badge", swatch:"radial-gradient(circle at 40% 35%,#FF8DA3,#FF5470 70%,#9c2e44)" },
+  { id:"unlock_2x",    type:"unlock",name:"2x Streak",  desc:"Cosmetic streak flair.",      cost:1200, tag:"Unlock",swatch:"linear-gradient(135deg,#FFC24B,#FF5470)" },
+  { id:"unlock_dark",  type:"unlock",name:"Stealth",    desc:"All-black minimal skin.",     cost:1500, tag:"Unlock",swatch:"linear-gradient(135deg,#2d2040,#0a0710)" }
+];
+
+/* ============================================================
+   STATE  +  PERSISTENCE
+   ============================================================ */
+let useFirebase = false, db = null, auth = null, uid = null, userRef = null;
+let state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[] };
+
+// session-level ad pacing (not persisted — resets each launch by design)
+let adFreq = { rewardedSinceInterstitial:0, lastInterstitialTs:0, lastRewardedTs:0, hiddenTs:0 };
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+async function initBackend(){
+  const configured = !firebaseConfig.apiKey.startsWith("PASTE");
+  if(configured){
+    try{
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth(); db = firebase.firestore();
+      await auth.signInAnonymously();
+      uid = auth.currentUser.uid;
+      userRef = db.collection("users").doc(uid);
+      const snap = await userRef.get();
+      if(snap.exists){ state = Object.assign(state, snap.data()); }
+      else { await userRef.set(state); }
+      useFirebase = true;
+    }catch(e){
+      console.warn("Firebase init failed, falling back to local mode:", e);
+      useFirebase = false;
+    }
+  }
+  // local-mode identity
+  if(!useFirebase){ uid = "local-" + Math.random().toString(36).slice(2,10); }
+
+  // daily reset
+  if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
+  if(!Array.isArray(state.redemptions)) state.redemptions = [];
+  await save();
+  applyEquippedTheme();
+  if(!FEATURES.rewards){
+    const t=document.getElementById('tabPrizes'); if(t) t.style.display="none";
+    const v=document.getElementById('view-prizes'); if(v) v.remove();
+  }
+  renderAll();
+  updateBanner("grind"); // hidden on the hero
+  if(ADS.appOpenColdStart){ setTimeout(showAppOpen, 600); }
+}
+
+async function save(){
+  if(useFirebase && userRef){
+    try{ await userRef.set(state, {merge:true}); }catch(e){ console.warn("save failed", e); }
+  }
+  // local mode: in-memory only (resets on refresh — Firebase = real persistence)
+}
+
+/* ============================================================
+   AD FLOW
+   ============================================================ */
+const adScrim=document.getElementById('adScrim');
+const adCountEl=document.getElementById('adCount');
+const adCloseBtn=document.getElementById('adClose');
+let adTimer=null;
+
+function showRewardedAd(){
+  // Native wrapper bridge takes priority when present
+  if(window.AdMobBridge && typeof window.AdMobBridge.showRewarded==="function"){
+    window.AdMobBridge.showRewarded(
+      ()=>creditAdReward(),                  // onReward
+      ()=>toast("Ad not finished — no points") // onDismiss without reward
+    );
+    return;
+  }
+  // Web fallback: simulated rewarded ad
+  let left = ECON.adLengthSec;
+  adCountEl.textContent = left;
+  document.getElementById('adReward').textContent = "+" + ECON.pointsPerAd + " pts";
+  adCloseBtn.disabled = true;
+  adCloseBtn.textContent = "Watch to earn";
+  adScrim.classList.add('show');
+  adTimer = setInterval(()=>{
+    left--; adCountEl.textContent = Math.max(left,0);
+    if(left<=0){
+      clearInterval(adTimer);
+      adCloseBtn.disabled = false;
+      adCloseBtn.textContent = "Claim +" + ECON.pointsPerAd + " pts";
+    }
+  },1000);
+}
+
+adCloseBtn.addEventListener('click', ()=>{
+  adScrim.classList.remove('show');
+  creditAdReward();
+});
+
+async function creditAdReward(){
+  state.points += ECON.pointsPerAd;
+  state.lifetimePoints += ECON.pointsPerAd;
+  state.adsWatched += 1;
+  state.dailyAdsWatched += 1;
+  state.lastAdDate = todayStr();
+  adFreq.rewardedSinceInterstitial += 1;
+  adFreq.lastRewardedTs = Date.now();
+  await save();
+  animateEarn(ECON.pointsPerAd);
+  renderAll();
+}
+
+/* ============================================================
+   GRIND BUTTON
+   ============================================================ */
+const grindBtn=document.getElementById('grindBtn');
+grindBtn.addEventListener('click', ()=>{
+  if(state.dailyAdsWatched >= ECON.dailyAdCap){
+    toast("Daily limit reached — come back tomorrow");
+    return;
+  }
+  showRewardedAd();
+});
+
+/* ============================================================
+   EARN ANIMATION (signature)
+   ============================================================ */
+const counterEl=document.getElementById('counter');
+const glowEl=document.getElementById('glow');
+const floatEl=document.getElementById('floatchip');
+let displayedPoints=0;
+
+function animateEarn(amount){
+  // floating +N chip
+  floatEl.textContent = "+" + amount;
+  floatEl.classList.remove('go'); void floatEl.offsetWidth; floatEl.classList.add('go');
+  // glow + pulse
+  glowEl.classList.add('on'); counterEl.classList.add('pulse');
+  setTimeout(()=>{ glowEl.classList.remove('on'); counterEl.classList.remove('pulse'); }, 320);
+  tweenCounter(displayedPoints, state.points, 700);
+}
+
+function tweenCounter(from,to,ms){
+  const start=performance.now();
+  function step(now){
+    const t=Math.min((now-start)/ms,1);
+    const eased=1-Math.pow(1-t,3);
+    const val=Math.round(from+(to-from)*eased);
+    counterEl.textContent=val.toLocaleString();
+    document.getElementById('balVal').textContent=val.toLocaleString();
+    if(t<1) requestAnimationFrame(step); else displayedPoints=to;
+  }
+  requestAnimationFrame(step);
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderAll(){ renderGrind(); renderBalance(); renderShop(); renderStuff(); renderRewards(); renderProfile(); }
+
+function renderBalance(){
+  document.getElementById('balVal').textContent = state.points.toLocaleString();
+  if(displayedPoints===0 && state.points>0){ displayedPoints=state.points; counterEl.textContent=state.points.toLocaleString(); }
+  else if(!counterEl.classList.contains('pulse')){ counterEl.textContent = state.points.toLocaleString(); }
+}
+
+function renderGrind(){
+  document.getElementById('grindSub').textContent = "+" + ECON.pointsPerAd + " pts";
+  document.getElementById('todayCount').textContent = state.dailyAdsWatched;
+  document.getElementById('dailyCap').textContent = ECON.dailyAdCap;
+  const pct = Math.min(100, (state.dailyAdsWatched/ECON.dailyAdCap)*100);
+  document.getElementById('dailyBar').style.width = pct + "%";
+  const capped = state.dailyAdsWatched >= ECON.dailyAdCap;
+  grindBtn.disabled = capped;
+  grindBtn.firstChild.textContent = capped ? "Come back tomorrow " : "Watch an ad ";
+  document.getElementById('grindHint').textContent = capped
+    ? "You've hit today's limit. The grind resets at midnight."
+    : "Tap to watch a rewarded ad and bank points. Spend them in the Shop.";
+}
+
+function renderShop(){
+  const grid=document.getElementById('shopGrid');
+  const cards = CATALOG.map(item=>{
+    const owned = state.owned.includes(item.id);
+    const afford = state.points >= item.cost;
+    const swatch = item.swatch || "var(--surface-2)";
+    let btn;
+    if(owned){ btn = `<button class="buy owned" disabled>Owned</button>`; }
+    else { btn = `<button class="buy" data-buy="${item.id}" ${afford?"":"disabled"}>${afford?"Buy":"Need more"}</button>`; }
+    return `<div class="card">
+      <span class="tag">${item.tag}</span>
+      <div class="swatch" style="background:${swatch}"></div>
+      <div class="name">${item.name}</div>
+      <div class="desc">${item.desc}</div>
+      <div class="price"><span class="coin"></span>${item.cost.toLocaleString()}</div>
+      ${btn}
+    </div>`;
+  });
+  // splice in a labeled native ad every N items
+  const nativeCard = `<div class="card native">
+      <span class="tag">Ad</span>
+      <div class="creative">Native ad slot</div>
+      <div class="name">Sponsored</div>
+      <div class="desc">Promoted content blends into the grid.</div>
+      <div class="adcta">Learn more</div>
+    </div>`;
+  const out=[];
+  cards.forEach((c,i)=>{ out.push(c); if((i+1)%ADS.nativeEveryNItems===0 && i<cards.length-1) out.push(nativeCard); });
+  grid.innerHTML = out.join("");
+  grid.querySelectorAll('[data-buy]').forEach(b=>{
+    b.addEventListener('click',()=>buyItem(b.getAttribute('data-buy')));
+  });
+}
+
+function renderStuff(){
+  const owned = CATALOG.filter(i=>state.owned.includes(i.id));
+  const grid=document.getElementById('stuffGrid');
+  const empty=document.getElementById('stuffEmpty');
+  if(owned.length===0){ grid.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display="none";
+  grid.innerHTML = owned.map(item=>{
+    const isTheme = item.type==="theme";
+    const equipped = state.equipped===item.id;
+    let btn;
+    if(isTheme){
+      btn = `<button class="buy ${equipped?'equipped':''}" data-equip="${item.id}">${equipped?'Equipped':'Equip'}</button>`;
+    } else {
+      btn = `<button class="buy owned" disabled>Owned</button>`;
+    }
+    return `<div class="card">
+      <span class="tag">${item.tag}</span>
+      <div class="swatch" style="background:${item.swatch||'var(--surface-2)'}"></div>
+      <div class="name">${item.name}</div>
+      <div class="desc">${item.desc}</div>
+      ${btn}
+    </div>`;
+  }).join("");
+  grid.querySelectorAll('[data-equip]').forEach(b=>{
+    b.addEventListener('click',()=>equipTheme(b.getAttribute('data-equip')));
+  });
+}
+
+function renderProfile(){
+  document.getElementById('statLifetime').textContent = state.lifetimePoints.toLocaleString();
+  document.getElementById('statAds').textContent = state.adsWatched.toLocaleString();
+  document.getElementById('statBal').textContent = state.points.toLocaleString();
+  document.getElementById('statItems').textContent = state.owned.length;
+  document.getElementById('playerId').textContent = uid || "—";
+  const pill=document.getElementById('modePill');
+  if(useFirebase){ pill.classList.add('live'); document.getElementById('modeText').textContent="Saving to Firebase"; }
+  else { pill.classList.remove('live'); document.getElementById('modeText').textContent="Local mode — add Firebase to save progress"; }
+}
+
+/* ============================================================
+   REWARDS CATALOG  (redeem points for physical goods)
+   ============================================================ */
+function renderRewards(){
+  const grid=document.getElementById('rewardsGrid');
+  grid.innerHTML = REWARDS.map(item=>{
+    const afford = state.points >= item.cost;
+    return `<div class="card">
+      <div class="reward-art">${item.art}</div>
+      <div class="name">${item.name}</div>
+      <div class="desc">${item.desc}</div>
+      <div class="pts"><span class="coin"></span>${item.cost.toLocaleString()}</div>
+      <div class="arv">approx. $${item.valueUSD} value</div>
+      <button class="redeem" data-redeem="${item.id}" ${afford?"":"disabled"}>${afford?"Redeem":"Keep grinding"}</button>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll('[data-redeem]').forEach(b=>{
+    b.addEventListener('click',()=>redeemItem(b.getAttribute('data-redeem')));
+  });
+
+  // pending redemptions
+  const wrap=document.getElementById('redemptionList');
+  if(state.redemptions.length===0){ wrap.innerHTML=""; return; }
+  wrap.innerHTML = `<div class="redemptions"><h3>Your redemptions</h3>` +
+    state.redemptions.slice().reverse().map(r=>{
+      const item=REWARDS.find(i=>i.id===r.itemId) || {art:"🎁",name:r.itemId};
+      return `<div class="redemption"><span class="ra">${item.art}</span>
+        <span class="rn">${item.name}</span><span class="rs">${r.status}</span></div>`;
+    }).join("") + `</div>`;
+}
+
+async function redeemItem(id){
+  const item = REWARDS.find(i=>i.id===id);
+  if(!item) return;
+  if(state.points < item.cost){ toast("Not enough points"); return; }
+  if(!confirm(`Redeem ${item.cost.toLocaleString()} points for a ${item.name}? We'll contact you to arrange shipping.`)) return;
+  state.points -= item.cost;
+  state.redemptions.push({ itemId:id, date:new Date().toISOString(), status:"pending" });
+  await save();
+  tweenCounter(displayedPoints, state.points, 400);
+  renderAll();
+  toast(item.name + " redeemed — check Rewards for status");
+  /* PRODUCTION TODO: a real redemption must be validated + recorded by a
+     Cloud Function (so points can't be faked client-side), collect a
+     shipping address, and notify your admin console to fulfill + mark
+     shipped. Heads-up: if one person's prizes total ~$600+ in a year you
+     may owe them a 1099 — track redemption value per user. */
+}
+
+/* ============================================================
+   BUY / EQUIP
+   ============================================================ */
+async function buyItem(id){
+  const item = CATALOG.find(i=>i.id===id);
+  if(!item || state.owned.includes(id)) return;
+  if(state.points < item.cost){ toast("Not enough points"); return; }
+  state.points -= item.cost;
+  state.owned.push(id);
+  await save();
+  tweenCounter(displayedPoints, state.points, 400);
+  renderAll();
+  toast(item.name + " unlocked!");
+}
+
+async function equipTheme(id){
+  state.equipped = (state.equipped===id) ? null : id;
+  await save();
+  applyEquippedTheme();
+  renderStuff();
+  toast(state.equipped ? "Theme equipped" : "Theme removed");
+}
+
+function applyEquippedTheme(){
+  const root=document.documentElement;
+  // reset to defaults
+  root.style.removeProperty('--coral'); root.style.removeProperty('--gold');
+  if(state.equipped){
+    const t = CATALOG.find(i=>i.id===state.equipped);
+    if(t && t.colors){
+      if(t.colors.coral) root.style.setProperty('--coral', t.colors.coral);
+      if(t.colors.gold)  root.style.setProperty('--gold', t.colors.gold);
+    }
+  }
+}
+
+/* ============================================================
+   INTERSTITIAL / APP-OPEN / BANNER  (bridge-aware, web fallback)
+   ============================================================ */
+const fsScrim=document.getElementById('fsScrim');
+const fsCount=document.getElementById('fsCount');
+const fsClose=document.getElementById('fsClose');
+const fsLabel=document.getElementById('fsLabel');
+const bannerEl=document.getElementById('banner');
+let fsTimer=null;
+
+function showFullscreenAd(label){
+  let left = ADS.fullscreenLenSec;
+  fsLabel.textContent = label;
+  fsCount.textContent = left;
+  fsClose.disabled = true;
+  fsClose.textContent = "Skip in " + left;
+  fsScrim.classList.add('show');
+  clearInterval(fsTimer);
+  fsTimer = setInterval(()=>{
+    left--; fsCount.textContent = Math.max(left,0);
+    if(left<=0){ clearInterval(fsTimer); fsClose.disabled=false; fsClose.textContent="Skip ad"; }
+    else { fsClose.textContent = "Skip in " + left; }
+  },1000);
+}
+fsClose.addEventListener('click', ()=>{ fsScrim.classList.remove('show'); clearInterval(fsTimer); });
+
+// Interstitial: armed by rewarded count, shown at the next natural break
+// (tab switch), never back-to-back with a rewarded, never under the min gap.
+function maybeShowInterstitial(){
+  const now = Date.now();
+  if(adFreq.rewardedSinceInterstitial < ADS.interstitialEveryNRewarded) return;
+  if((now - adFreq.lastInterstitialTs)/1000 < ADS.interstitialMinGapSec) return;
+  if((now - adFreq.lastRewardedTs)/1000 < 3) return; // breathing room after rewarded
+  adFreq.rewardedSinceInterstitial = 0;
+  adFreq.lastInterstitialTs = now;
+  if(window.AdMobBridge && typeof AdMobBridge.showInterstitial==="function"){ AdMobBridge.showInterstitial(()=>{}); return; }
+  showFullscreenAd("Sponsored");
+}
+
+function showAppOpen(){
+  if(window.AdMobBridge && typeof AdMobBridge.showAppOpen==="function"){ AdMobBridge.showAppOpen(()=>{}); return; }
+  showFullscreenAd("Sponsored · App Open");
+}
+
+function updateBanner(activeTab){
+  const show = ADS.bannerScreens.includes(activeTab);
+  document.body.classList.toggle('banner-on', show);
+  bannerEl.classList.toggle('show', show);
+  if(window.AdMobBridge){
+    if(show && typeof AdMobBridge.showBanner==="function") AdMobBridge.showBanner("bottom");
+    else if(!show && typeof AdMobBridge.hideBanner==="function") AdMobBridge.hideBanner();
+  }
+}
+
+// Re-show app-open only after a long background period.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ adFreq.hiddenTs = Date.now(); }
+  else {
+    if(adFreq.hiddenTs && (Date.now()-adFreq.hiddenTs)/1000 >= ADS.appOpenMinBackgroundSec){ showAppOpen(); }
+    adFreq.hiddenTs = 0;
+  }
+});
+
+/* ============================================================
+   TABS + TOAST
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    const name=tab.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===tab));
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
+    document.querySelector('.views').scrollTop=0;
+    updateBanner(name);
+    maybeShowInterstitial();
+  });
+});
+
+let toastTimer=null;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+/* ============================================================
+   GO
+   ============================================================ */
+initBackend();
+</script>
+</body>
+</html>
