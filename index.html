@@ -215,6 +215,33 @@
   .toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + 18px);transform:translateX(-50%) translateY(20px);z-index:60;background:var(--surface-2);border:1px solid var(--line);color:var(--text);padding:12px 18px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transition:all .3s ease;pointer-events:none;max-width:90%;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* ---------- login screen ---------- */
+  .login-scrim{position:fixed;inset:0;z-index:100;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:0}
+  .login-scrim.hidden{display:none}
+  .login-logo{font-family:'Bricolage Grotesque';font-weight:800;font-size:42px;letter-spacing:-.03em;margin-bottom:4px;display:flex;align-items:center;gap:12px}
+  .login-logo .dot{width:14px;height:14px;border-radius:4px;background:var(--coral);box-shadow:0 0 18px var(--coral)}
+  .login-tagline{color:var(--muted);font-size:14px;text-align:center;margin-bottom:36px;line-height:1.6}
+  .login-btns{width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px}
+  .login-btn{width:100%;border:none;padding:15px 20px;border-radius:14px;font-family:'Inter';font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s,opacity .15s}
+  .login-btn:active{transform:translateY(1px)}
+  .login-btn:disabled{opacity:.45;cursor:not-allowed}
+  .login-btn.google{background:#fff;color:#1f1f1f}
+  .login-btn.apple-soon{background:var(--surface);color:var(--muted);border:1px solid var(--line);cursor:not-allowed}
+  .login-btn svg{width:20px;height:20px;flex-shrink:0}
+  .login-divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:4px 0;width:100%;max-width:340px}
+  .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .email-form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px}
+  .email-form input{background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter';font-size:15px;padding:14px 16px;border-radius:12px;outline:none;transition:border-color .15s}
+  .email-form input:focus{border-color:var(--coral)}
+  .email-form input::placeholder{color:var(--muted)}
+  .email-form .submit{background:var(--coral);color:#fff;font-family:'Inter';font-weight:700;font-size:15px;padding:15px;border-radius:14px;border:none;cursor:pointer;transition:opacity .15s,transform .1s}
+  .email-form .submit:active{transform:translateY(1px)}
+  .email-form .submit:disabled{opacity:.45;cursor:not-allowed}
+  .login-toggle{color:var(--muted);font-size:13px;text-align:center;margin-top:4px}
+  .login-toggle span{color:var(--coral);cursor:pointer;font-weight:600}
+  .login-err{color:var(--coral);font-size:12.5px;text-align:center;min-height:18px}
+  .login-skip{color:var(--muted);font-size:12px;margin-top:20px;cursor:pointer;text-decoration:underline;background:none;border:none}
+
   /* ---------- anchored banner (Shop/Stuff/Profile only) ---------- */
   .banner{
     position:fixed;left:0;right:0;z-index:4;max-width:520px;margin:0 auto;
@@ -347,6 +374,7 @@
         <div class="v" id="playerId">—</div>
       </div>
       <div class="modepill" id="modePill"><i></i><span id="modeText">Local mode — add Firebase to save progress</span></div>
+      <button class="ghost-btn" id="signOutBtn" onclick="signOut()" style="display:none">Sign out</button>
     </section>
 
   </main>
@@ -380,6 +408,41 @@
     <span class="label">Ad</span>
     <div class="fill"><span class="box"></span>Banner ad — 320×50</div>
   </div>
+</div>
+
+<!-- login screen -->
+<div class="login-scrim" id="loginScrim">
+  <div class="login-logo"><span class="dot"></span>Ad Grind</div>
+  <p class="login-tagline">Watch ads. Bank points.<br>Redeem for real gear.</p>
+
+  <div class="login-btns">
+    <!-- Google -->
+    <button class="login-btn google" id="loginGoogle">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+
+    <!-- Apple (needs Apple Developer account — coming soon) -->
+    <button class="login-btn apple-soon" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      Apple — coming soon
+    </button>
+  </div>
+
+  <div class="login-divider">or</div>
+
+  <!-- Email form (toggles between sign-in and sign-up) -->
+  <div class="email-form" id="emailForm">
+    <div class="login-err" id="loginErr"></div>
+    <input type="email" id="emailInput" placeholder="Email address" autocomplete="email" />
+    <input type="password" id="passInput" placeholder="Password (6+ characters)" autocomplete="current-password" />
+    <input type="password" id="confirmInput" placeholder="Confirm password" autocomplete="new-password" style="display:none" />
+    <button class="submit" id="emailSubmit">Sign in</button>
+    <div class="login-toggle" id="loginToggle">No account? <span id="toggleLink">Create one</span></div>
+    <div class="login-toggle"><span id="forgotLink">Forgot password?</span></div>
+  </div>
+
+  <button class="login-skip" id="loginSkip">Skip for now (progress won't be saved)</button>
 </div>
 
 <!-- ad modal -->
@@ -542,34 +605,149 @@ async function initBackend(){
     try{
       firebase.initializeApp(firebaseConfig);
       auth = firebase.auth(); db = firebase.firestore();
-      await auth.signInAnonymously();
-      uid = auth.currentUser.uid;
-      userRef = db.collection("users").doc(uid);
-      const snap = await userRef.get();
-      if(snap.exists){ state = Object.assign(state, snap.data()); }
-      else { await userRef.set(state); }
+      // Listen for auth state — show login screen or load user
+      auth.onAuthStateChanged(async user=>{
+        if(user){
+          await loadUser(user.uid);
+          showApp();
+        } else {
+          showLoginScreen();
+        }
+      });
       useFirebase = true;
     }catch(e){
-      console.warn("Firebase init failed, falling back to local mode:", e);
+      console.warn("Firebase init failed, local mode:", e);
       useFirebase = false;
+      showApp();
     }
+  } else {
+    uid = "local-" + Math.random().toString(36).slice(2,10);
+    showApp();
   }
-  // local-mode identity
-  if(!useFirebase){ uid = "local-" + Math.random().toString(36).slice(2,10); }
+}
 
-  // daily reset
+async function loadUser(userId){
+  uid = userId;
+  userRef = db.collection("users").doc(uid);
+  const snap = await userRef.get();
+  if(snap.exists){ state = Object.assign(state, snap.data()); }
+  else { await userRef.set(state); }
   if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
   if(!Array.isArray(state.redemptions)) state.redemptions = [];
   await save();
+}
+
+function showApp(){
+  document.getElementById('loginScrim').classList.add('hidden');
   applyEquippedTheme();
   if(!FEATURES.rewards){
     const t=document.getElementById('tabPrizes'); if(t) t.style.display="none";
     const v=document.getElementById('view-prizes'); if(v) v.remove();
   }
   renderAll();
-  updateBanner("grind"); // hidden on the hero
+  updateBanner("grind");
   if(ADS.appOpenColdStart){ setTimeout(showAppOpen, 600); }
 }
+
+/* ============================================================
+   LOGIN SCREEN
+   ============================================================ */
+let loginMode = "signin"; // or "signup"
+
+function showLoginScreen(){
+  document.getElementById('loginScrim').classList.remove('hidden');
+}
+
+function setLoginErr(msg){ document.getElementById('loginErr').textContent = msg || ""; }
+
+// Google
+document.getElementById('loginGoogle').addEventListener('click', async()=>{
+  setLoginErr();
+  const btn = document.getElementById('loginGoogle');
+  btn.disabled = true; btn.textContent = "Signing in…";
+  try{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    // onAuthStateChanged handles the rest
+  }catch(e){
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google`;
+    setLoginErr(e.code==="auth/popup-closed-by-user" ? "" : "Google sign-in failed. Try again.");
+  }
+});
+
+// Toggle signin / signup
+document.getElementById('toggleLink').addEventListener('click',()=>{
+  loginMode = loginMode==="signin" ? "signup" : "signin";
+  const isSignup = loginMode==="signup";
+  document.getElementById('confirmInput').style.display = isSignup ? "" : "none";
+  document.getElementById('emailSubmit').textContent = isSignup ? "Create account" : "Sign in";
+  document.getElementById('loginToggle').innerHTML = isSignup
+    ? `Have an account? <span id="toggleLink">Sign in</span>`
+    : `No account? <span id="toggleLink">Create one</span>`;
+  document.getElementById('toggleLink').addEventListener('click', arguments.callee.bind(null));
+  setLoginErr();
+});
+
+// Forgot password
+document.getElementById('forgotLink').addEventListener('click', async()=>{
+  const email = document.getElementById('emailInput').value.trim();
+  if(!email){ setLoginErr("Enter your email first."); return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    setLoginErr(""); toast("Reset email sent — check your inbox");
+  }catch(e){ setLoginErr("Couldn't send reset email. Check the address."); }
+});
+
+// Email submit (sign in or sign up)
+document.getElementById('emailSubmit').addEventListener('click', async()=>{
+  const email = document.getElementById('emailInput').value.trim();
+  const pass  = document.getElementById('passInput').value;
+  const conf  = document.getElementById('confirmInput').value;
+  setLoginErr();
+  if(!email || !pass){ setLoginErr("Fill in email and password."); return; }
+  if(loginMode==="signup"){
+    if(pass.length < 6){ setLoginErr("Password must be 6+ characters."); return; }
+    if(pass !== conf){ setLoginErr("Passwords don't match."); return; }
+  }
+  const btn = document.getElementById('emailSubmit');
+  btn.disabled = true; btn.textContent = "…";
+  try{
+    if(loginMode==="signup"){
+      await auth.createUserWithEmailAndPassword(email, pass);
+    } else {
+      await auth.signInWithEmailAndPassword(email, pass);
+    }
+  }catch(e){
+    btn.disabled = false;
+    btn.textContent = loginMode==="signup" ? "Create account" : "Sign in";
+    const msgs = {
+      "auth/email-already-in-use":"That email already has an account. Sign in instead.",
+      "auth/user-not-found":"No account with that email. Create one?",
+      "auth/wrong-password":"Wrong password. Try again or reset it.",
+      "auth/invalid-email":"That doesn't look like a valid email.",
+      "auth/too-many-requests":"Too many attempts. Try again later."
+    };
+    setLoginErr(msgs[e.code] || "Something went wrong. Try again.");
+  }
+});
+
+// Skip (anonymous local mode)
+document.getElementById('loginSkip').addEventListener('click',()=>{
+  uid = "local-" + Math.random().toString(36).slice(2,10);
+  useFirebase = false;
+  showApp();
+});
+
+// Sign out (called from Profile)
+async function signOut(){
+  if(useFirebase && auth){ await auth.signOut(); }
+  state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[] };
+  userRef = null; uid = null; useFirebase = false;
+  showLoginScreen();
+}
+
+
 
 async function save(){
   if(useFirebase && userRef){
@@ -765,10 +943,19 @@ function renderProfile(){
   document.getElementById('statAds').textContent = state.adsWatched.toLocaleString();
   document.getElementById('statBal').textContent = state.points.toLocaleString();
   document.getElementById('statItems').textContent = state.owned.length;
-  document.getElementById('playerId').textContent = uid || "—";
+  const user = useFirebase && auth ? auth.currentUser : null;
+  document.getElementById('playerId').textContent = user ? (user.email || user.displayName || uid) : (uid || "—");
   const pill=document.getElementById('modePill');
-  if(useFirebase){ pill.classList.add('live'); document.getElementById('modeText').textContent="Saving to Firebase"; }
-  else { pill.classList.remove('live'); document.getElementById('modeText').textContent="Local mode — add Firebase to save progress"; }
+  const signOutBtn=document.getElementById('signOutBtn');
+  if(useFirebase){
+    pill.classList.add('live');
+    document.getElementById('modeText').textContent = user?.email ? "Signed in · Saving to Firebase" : "Saving to Firebase";
+    signOutBtn.style.display = "";
+  } else {
+    pill.classList.remove('live');
+    document.getElementById('modeText').textContent="Local mode — sign in to save progress";
+    signOutBtn.style.display = "none";
+  }
 }
 
 /* ============================================================
