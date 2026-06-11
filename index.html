@@ -180,6 +180,12 @@
   .modepill i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
   .modepill.live i{background:var(--good);box-shadow:0 0 8px var(--good)}
 
+  /* ---------- shop category tabs ---------- */
+  .cat-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+  .cat-tabs::-webkit-scrollbar{display:none}
+  .cat-tab{flex-shrink:0;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-family:'Inter';font-weight:600;font-size:12px;padding:7px 14px;border-radius:99px;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .cat-tab.active{background:var(--coral);border-color:var(--coral);color:#fff}
+
   /* ---------- bottom tab bar ---------- */
   .tabs{
     position:fixed;bottom:0;left:0;right:0;z-index:5;max-width:520px;margin:0 auto;
@@ -340,7 +346,7 @@
   <main class="views">
 
     <!-- ============ GRIND ============ -->
-    <section class="view active" id="view-grind">
+    <section class="view" id="view-grind">
       <div class="hero">
         <div class="eyebrow">Your points</div>
         <div class="counter-wrap">
@@ -352,25 +358,33 @@
       </div>
 
       <button class="grind-btn" id="grindBtn">
-        Watch an ad
+        Watch a rewarded ad
         <span class="sub" id="grindSub">+10 pts</span>
       </button>
 
       <div class="meter">
         <div class="row">
-          <span class="label">Today's grind</span>
+          <span class="label">Today's boost</span>
           <span class="num"><span id="todayCount">0</span> / <span id="dailyCap">50</span> ads</span>
         </div>
         <div class="bar"><i id="dailyBar" style="width:0%"></i></div>
       </div>
 
-      <p class="hint" id="grindHint">Tap to watch a rewarded ad and bank points. Spend them in the Shop.</p>
+      <p class="hint" id="grindHint">Optional — watch a rewarded ad for bonus points on top of your daily tasks.</p>
     </section>
 
     <!-- ============ SHOP ============ -->
     <section class="view" id="view-shop">
       <h2 class="sec-head">Shop</h2>
-      <p class="sec-sub">Spend points on themes, badges, and unlocks. All in-app — no cash, no cashout.</p>
+      <p class="sec-sub">Spend Grind Points on digital unlocks. All items are in-app only.</p>
+      <div class="cat-tabs" id="catTabs">
+        <button class="cat-tab active" data-cat="all">All</button>
+        <button class="cat-tab" data-cat="theme">Themes</button>
+        <button class="cat-tab" data-cat="badge">Badges</button>
+        <button class="cat-tab" data-cat="unlock">Unlocks</button>
+        <button class="cat-tab" data-cat="collect">Collectibles</button>
+        <button class="cat-tab" data-cat="title">Titles</button>
+      </div>
       <div class="grid" id="shopGrid"></div>
     </section>
 
@@ -387,7 +401,7 @@
 
     <!-- ============ PRIZES (draw) ============ -->
     <!-- ============ CHALLENGES ============ -->
-    <section class="view" id="view-challenges">
+    <section class="view active" id="view-challenges">
       <h2 class="sec-head">Challenges</h2>
       <p class="sec-sub" id="challengesSub">Complete daily tasks to earn Grind Points. Resets at midnight.</p>
 
@@ -409,16 +423,6 @@
       </div>
     </section>
 
-    <section class="view" id="view-prizes">
-      <h2 class="sec-head">Rewards</h2>
-      <p class="sec-sub">Spend Grind Points on digital themes, badges, and premium unlocks.</p>
-      <div class="grid" id="rewardsGrid"></div>
-      <div id="redemptionList"></div>
-      <p class="legal-line">
-        Grind Points have no cash value and cannot be transferred or redeemed for physical items.
-        All rewards are digital and remain within Ad Grind.
-      </p>
-    </section>
 
     <section class="view" id="view-profile">
       <h2 class="sec-head">Account</h2>
@@ -472,9 +476,9 @@
 
   <!-- bottom tabs -->
   <nav class="tabs">
-    <button class="tab active" data-tab="grind">
-      <svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-      Grind
+    <button class="tab active" data-tab="challenges">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Tasks
     </button>
     <button class="tab" data-tab="shop">
       <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -484,13 +488,9 @@
       <svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/></svg>
       Stuff
     </button>
-    <button class="tab" data-tab="challenges">
-      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      Tasks
-    </button>
-    <button class="tab" data-tab="prizes" id="tabPrizes">
-      <svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7S9 7 8 5.5 9 3 12 7zm0 0s3 0 4-1.5S15 3 12 7z"/></svg>
-      Rewards
+    <button class="tab" data-tab="grind">
+      <svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      Boost
     </button>
     <button class="tab" data-tab="profile">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
@@ -610,29 +610,92 @@ const ECON = {
 const FEATURES = { rewards: true };   // redemption catalog ON
 
 /* ============================================================
-   >>> REWARDS CATALOG  (digital unlocks only — AdMob compliant)
+   >>> STORE CATALOG  (digital unlocks only — AdMob compliant)
    All items are digital, in-app, non-transferable, no cash value.
    Physical goods removed per AdMob rewarded ad policy.
    ============================================================ */
-const REWARDS = [
-  { id:"theme_ember",   name:"Ember Theme",      desc:"Coral + ember dark skin. Permanent unlock.", cost:150,   art:"🔥" },
-  { id:"theme_toxic",   name:"Toxic Theme",       desc:"Acid green high-contrast skin.",             cost:300,   art:"☢️" },
-  { id:"theme_frost",   name:"Frost Theme",       desc:"Icy blue + cyan accent skin.",               cost:300,   art:"❄️" },
-  { id:"theme_royal",   name:"Royal Theme",       desc:"Gold on deep violet skin.",                  cost:500,   art:"👑" },
-  { id:"theme_stealth", name:"Stealth Theme",     desc:"All-black minimal skin.",                    cost:800,   art:"🖤" },
-  { id:"badge_dayone",  name:"Day One Badge",     desc:"Proof you were here at launch.",             cost:100,   art:"⭐" },
-  { id:"badge_grinder", name:"Grinder Badge",     desc:"For the truly dedicated.",                   cost:1000,  art:"💪" },
-  { id:"badge_whale",   name:"Whale Badge",       desc:"Top-tier collector status.",                 cost:5000,  art:"🐋" },
-  { id:"unlock_streak", name:"Streak Flair",      desc:"Animated streak indicator on your counter.",cost:2000,  art:"⚡" },
-  { id:"unlock_pro",    name:"Pro Profile",       desc:"Gold border + Pro tag on your profile.",     cost:3000,  art:"🏆" },
-  { id:"unlock_dark",   name:"Dark Mode Plus",    desc:"Extra dark OLED-optimized skin.",            cost:1500,  art:"🌑" },
-  { id:"unlock_stats",  name:"Stats Unlocked",    desc:"Lifetime detailed stats and charts.",        cost:2500,  art:"📊" }
+/* ============================================================
+   >>> STORE CATALOG — all digital unlocks, merged shop + rewards
+   All items: in-app only, non-transferable, no cash value.
+   Types: theme, badge, unlock, collectible, frame, title
+   ============================================================ */
+const STORE = [
+  // ---- THEMES (re-skin the whole app) ----
+  { id:"theme_default",  type:"theme",  tag:"Theme",      name:"Default",        desc:"The original Ad Grind look.",              cost:0,      art:"🎨", colors:{}, swatch:"linear-gradient(135deg,#FF5470,#FFC24B)" },
+  { id:"theme_ember",    type:"theme",  tag:"Theme",      name:"Ember",          desc:"Coral + ember dark.",                      cost:150,    art:"🔥", colors:{coral:"#FF5470",gold:"#FFC24B"}, swatch:"linear-gradient(135deg,#FF5470,#FFC24B)" },
+  { id:"theme_toxic",    type:"theme",  tag:"Theme",      name:"Toxic",          desc:"Acid green high-contrast.",                cost:300,    art:"☢️", colors:{coral:"#9DFF3C",gold:"#C6FF6A"}, swatch:"linear-gradient(135deg,#9DFF3C,#1f3b12)" },
+  { id:"theme_frost",    type:"theme",  tag:"Theme",      name:"Frost",          desc:"Icy blue + cyan accents.",                 cost:300,    art:"❄️", colors:{coral:"#54C9FF",gold:"#7BE0FF"}, swatch:"linear-gradient(135deg,#54C9FF,#1b3a52)" },
+  { id:"theme_royal",    type:"theme",  tag:"Theme",      name:"Royal",          desc:"Gold on deep violet.",                     cost:500,    art:"👑", colors:{coral:"#B673FF",gold:"#FFD86B"}, swatch:"linear-gradient(135deg,#FFD86B,#6a3bb3)" },
+  { id:"theme_stealth",  type:"theme",  tag:"Theme",      name:"Stealth",        desc:"All-black OLED minimal.",                  cost:800,    art:"🖤", colors:{coral:"#888",gold:"#aaa"}, swatch:"linear-gradient(135deg,#111,#222)" },
+  { id:"theme_lava",     type:"theme",  tag:"Theme",      name:"Lava",           desc:"Deep red magma vibes.",                    cost:600,    art:"🌋", colors:{coral:"#FF3D00",gold:"#FF6E00"}, swatch:"linear-gradient(135deg,#FF3D00,#7b1500)" },
+  { id:"theme_ocean",    type:"theme",  tag:"Theme",      name:"Ocean",          desc:"Deep ocean blues.",                        cost:600,    art:"🌊", colors:{coral:"#0090FF",gold:"#00D4FF"}, swatch:"linear-gradient(135deg,#0090FF,#003a6b)" },
+  { id:"theme_forest",   type:"theme",  tag:"Theme",      name:"Forest",         desc:"Dark earthy greens.",                      cost:500,    art:"🌲", colors:{coral:"#4CAF50",gold:"#8BC34A"}, swatch:"linear-gradient(135deg,#2e5e2e,#1a3a1a)" },
+  { id:"theme_sakura",   type:"theme",  tag:"Theme",      name:"Sakura",         desc:"Soft pink blossom palette.",               cost:700,    art:"🌸", colors:{coral:"#FF85A1",gold:"#FFB7C5"}, swatch:"linear-gradient(135deg,#FF85A1,#3d1520)" },
+  { id:"theme_neon",     type:"theme",  tag:"Theme",      name:"Neon City",      desc:"Electric neon on near-black.",             cost:1000,   art:"⚡", colors:{coral:"#FF00FF",gold:"#00FFFF"}, swatch:"linear-gradient(135deg,#FF00FF,#00FFFF)" },
+  { id:"theme_sunset",   type:"theme",  tag:"Theme",      name:"Sunset",         desc:"Warm amber and magenta.",                  cost:800,    art:"🌅", colors:{coral:"#FF6B6B",gold:"#FFE66D"}, swatch:"linear-gradient(135deg,#FF6B6B,#FFE66D)" },
+  { id:"theme_midnight", type:"theme",  tag:"Theme",      name:"Midnight",       desc:"Deep navy ultra-dark.",                    cost:900,    art:"🌙", colors:{coral:"#6C63FF",gold:"#A78BFA"}, swatch:"linear-gradient(135deg,#0d0d2b,#1a1a4e)" },
+  { id:"theme_gold",     type:"theme",  tag:"Theme",      name:"Gold Rush",      desc:"All-gold prestige skin.",                  cost:2000,   art:"💰", colors:{coral:"#FFD700",gold:"#FFF176"}, swatch:"linear-gradient(135deg,#FFD700,#b8860b)" },
+  { id:"theme_chrome",   type:"theme",  tag:"Theme",      name:"Chrome",         desc:"Metallic silver ultra-clean.",             cost:2500,   art:"🪨", colors:{coral:"#90A4AE",gold:"#ECEFF1"}, swatch:"linear-gradient(135deg,#90A4AE,#37474F)" },
+  { id:"theme_crimson",  type:"theme",  tag:"Theme",      name:"Crimson",        desc:"Blood red dark assassin.",                 cost:1500,   art:"🩸", colors:{coral:"#C62828",gold:"#EF5350"}, swatch:"linear-gradient(135deg,#C62828,#1a0000)" },
+
+  // ---- BADGES ----
+  { id:"badge_dayone",   type:"badge",  tag:"Badge",      name:"Day One",        desc:"You were here at launch.",                 cost:100,    art:"⭐", swatch:"radial-gradient(#FFE6A8,#FFC24B 70%,#A8853A)" },
+  { id:"badge_grinder",  type:"badge",  tag:"Badge",      name:"Grinder",        desc:"For the truly dedicated.",                 cost:1000,   art:"💪", swatch:"radial-gradient(#FF8DA3,#FF5470 70%,#9c2e44)" },
+  { id:"badge_whale",    type:"badge",  tag:"Badge",      name:"Whale",          desc:"Top-tier collector status.",               cost:5000,   art:"🐋", swatch:"radial-gradient(#7BE0FF,#54C9FF 70%,#1b3a52)" },
+  { id:"badge_legend",   type:"badge",  tag:"Badge",      name:"Legend",         desc:"The rarest badge in the game.",            cost:25000,  art:"🏆", swatch:"radial-gradient(#FFD700,#FFC24B 70%,#7a5c00)" },
+  { id:"badge_streak7",  type:"badge",  tag:"Badge",      name:"Week Warrior",   desc:"7-day streak achieved.",                   cost:500,    art:"🔥", swatch:"radial-gradient(#FFB347,#FF6B00 70%,#3d1a00)" },
+  { id:"badge_streak30", type:"badge",  tag:"Badge",      name:"Monthly Master", desc:"30-day streak achieved.",                  cost:3000,   art:"📅", swatch:"radial-gradient(#B673FF,#8B00FF 70%,#2d0066)" },
+  { id:"badge_nerd",     type:"badge",  tag:"Badge",      name:"Trivia Nerd",    desc:"Answered 10 trivia questions correctly.",  cost:800,    art:"🤓", swatch:"radial-gradient(#5AD1B0,#00BFA5 70%,#00352e)" },
+  { id:"badge_speedster",type:"badge",  tag:"Badge",      name:"Speedster",      desc:"Lightning reaction time.",                 cost:600,    art:"⚡", swatch:"radial-gradient(#FFE66D,#FFC107 70%,#5c4300)" },
+  { id:"badge_mathwiz",  type:"badge",  tag:"Badge",      name:"Math Wiz",       desc:"Solved 10 math challenges.",               cost:700,    art:"🧮", swatch:"radial-gradient(#54C9FF,#0090FF 70%,#003a6b)" },
+  { id:"badge_explorer", type:"badge",  tag:"Badge",      name:"Explorer",       desc:"Completed every task type once.",          cost:1500,   art:"🗺️", swatch:"radial-gradient(#4CAF50,#2E7D32 70%,#0a1f0a)" },
+  { id:"badge_night",    type:"badge",  tag:"Badge",      name:"Night Owl",      desc:"Logged in after midnight.",                cost:300,    art:"🦉", swatch:"radial-gradient(#6C63FF,#311B92 70%,#0d0020)" },
+  { id:"badge_social",   type:"badge",  tag:"Badge",      name:"Social Grinder", desc:"Referred a friend.",                       cost:400,    art:"🤝", swatch:"radial-gradient(#FF85A1,#E91E63 70%,#3d0020)" },
+
+  // ---- UNLOCKS (features + cosmetics) ----
+  { id:"unlock_streak",  type:"unlock", tag:"Unlock",     name:"Streak Flair",   desc:"Animated fire on your streak counter.",    cost:2000,   art:"🔥", swatch:"linear-gradient(135deg,#FFC24B,#FF5470)" },
+  { id:"unlock_pro",     type:"unlock", tag:"Unlock",     name:"Pro Profile",    desc:"Gold border + Pro tag on your profile.",   cost:3000,   art:"🏆", swatch:"linear-gradient(135deg,#FFD700,#6a3bb3)" },
+  { id:"unlock_stats",   type:"unlock", tag:"Unlock",     name:"Stats+",         desc:"Detailed lifetime stats and charts.",      cost:2500,   art:"📊", swatch:"linear-gradient(135deg,#54C9FF,#0090FF)" },
+  { id:"unlock_2x",      type:"unlock", tag:"Unlock",     name:"2× Boost",       desc:"Double ad points for 24 hours.",           cost:1200,   art:"⚡", swatch:"linear-gradient(135deg,#FFE66D,#FF6B6B)" },
+  { id:"unlock_dark",    type:"unlock", tag:"Unlock",     name:"OLED Dark",      desc:"Extra-dark OLED-optimized overlay.",       cost:1500,   art:"🌑", swatch:"linear-gradient(135deg,#111,#000)" },
+  { id:"unlock_confetti",type:"unlock", tag:"Unlock",     name:"Confetti Pop",   desc:"Confetti burst when you earn points.",     cost:800,    art:"🎊", swatch:"linear-gradient(135deg,#FF85A1,#FFE66D)" },
+  { id:"unlock_soundfx", type:"unlock", tag:"Unlock",     name:"Sound FX",       desc:"Satisfying sounds on point earn.",         cost:600,    art:"🔊", swatch:"linear-gradient(135deg,#B673FF,#54C9FF)" },
+  { id:"unlock_bignum",  type:"unlock", tag:"Unlock",     name:"Big Numbers",    desc:"Oversized animated point counter.",        cost:1000,   art:"🔢", swatch:"linear-gradient(135deg,#FFC24B,#B673FF)" },
+  { id:"unlock_rainbow", type:"unlock", tag:"Unlock",     name:"Rainbow Mode",   desc:"Cycling color accent on the counter.",     cost:2000,   art:"🌈", swatch:"linear-gradient(135deg,#FF0000,#FF7F00,#FFFF00,#00FF00,#0000FF)" },
+  { id:"unlock_vip",     type:"unlock", tag:"Unlock",     name:"VIP Access",     desc:"VIP badge + exclusive future content.",    cost:10000,  art:"💎", swatch:"linear-gradient(135deg,#00FFFF,#FF00FF)" },
+
+  // ---- COLLECTIBLES ----
+  { id:"coll_coin",      type:"collect",tag:"Collectible",name:"Gold Coin",      desc:"A classic. Your first collectible.",       cost:50,     art:"🪙", swatch:"radial-gradient(#FFE6A8,#FFC24B 70%)" },
+  { id:"coll_gem",       type:"collect",tag:"Collectible",name:"Blue Gem",       desc:"Rare and shiny.",                          cost:400,    art:"💎", swatch:"radial-gradient(#7BE0FF,#0090FF 70%)" },
+  { id:"coll_crown",     type:"collect",tag:"Collectible",name:"Crown",          desc:"For royalty only.",                        cost:1500,   art:"👑", swatch:"radial-gradient(#FFD700,#FFC24B 70%)" },
+  { id:"coll_rocket",    type:"collect",tag:"Collectible",name:"Rocket",         desc:"To the moon.",                             cost:750,    art:"🚀", swatch:"radial-gradient(#FF6B6B,#FF3D00 70%)" },
+  { id:"coll_diamond",   type:"collect",tag:"Collectible",name:"Diamond",        desc:"Extremely rare.",                          cost:5000,   art:"💠", swatch:"radial-gradient(#E0F7FA,#4DD0E1 70%)" },
+  { id:"coll_trophy",    type:"collect",tag:"Collectible",name:"Trophy",         desc:"You earned this.",                         cost:2000,   art:"🏆", swatch:"radial-gradient(#FFE66D,#FFC107 70%)" },
+  { id:"coll_star",      type:"collect",tag:"Collectible",name:"Star",           desc:"Be a star.",                               cost:200,    art:"⭐", swatch:"radial-gradient(#FFE66D,#FFB300 70%)" },
+  { id:"coll_lightning", type:"collect",tag:"Collectible",name:"Lightning",      desc:"Electric energy.",                         cost:300,    art:"⚡", swatch:"radial-gradient(#FFF176,#FFC107 70%)" },
+  { id:"coll_ghost",     type:"collect",tag:"Collectible",name:"Ghost",          desc:"Boo.",                                     cost:250,    art:"👻", swatch:"radial-gradient(#ECEFF1,#B0BEC5 70%)" },
+  { id:"coll_fire",      type:"collect",tag:"Collectible",name:"Fire",           desc:"Hot.",                                     cost:350,    art:"🔥", swatch:"radial-gradient(#FF6B00,#FF3D00 70%)" },
+  { id:"coll_icecream",  type:"collect",tag:"Collectible",name:"Ice Cream",      desc:"Sweet reward.",                            cost:150,    art:"🍦", swatch:"radial-gradient(#FFB7C5,#FF85A1 70%)" },
+  { id:"coll_alien",     type:"collect",tag:"Collectible",name:"Alien",          desc:"Not of this world.",                       cost:600,    art:"👽", swatch:"radial-gradient(#69FF47,#00BFA5 70%)" },
+  { id:"coll_robot",     type:"collect",tag:"Collectible",name:"Robot",          desc:"Machine precision.",                       cost:700,    art:"🤖", swatch:"radial-gradient(#90A4AE,#546E7A 70%)" },
+  { id:"coll_dragon",    type:"collect",tag:"Collectible",name:"Dragon",         desc:"Legendary.",                               cost:8000,   art:"🐉", swatch:"radial-gradient(#FF3D00,#6a0000 70%)" },
+  { id:"coll_unicorn",   type:"collect",tag:"Collectible",name:"Unicorn",        desc:"Pure magic.",                              cost:7500,   art:"🦄", swatch:"radial-gradient(#FF85A1,#B673FF 70%)" },
+
+  // ---- TITLES (display name flair) ----
+  { id:"title_novice",   type:"title",  tag:"Title",      name:"Novice",         desc:"Just getting started.",                    cost:0,      art:"📝", swatch:"linear-gradient(135deg,#546E7A,#37474F)" },
+  { id:"title_grinder",  type:"title",  tag:"Title",      name:"The Grinder",    desc:"You put in the work.",                     cost:500,    art:"⚙️", swatch:"linear-gradient(135deg,#FF5470,#9c2e44)" },
+  { id:"title_champ",    type:"title",  tag:"Title",      name:"Champion",       desc:"A cut above.",                             cost:2000,   art:"🏅", swatch:"linear-gradient(135deg,#FFD700,#b8860b)" },
+  { id:"title_elite",    type:"title",  tag:"Title",      name:"Elite",          desc:"Top tier.",                                cost:5000,   art:"💠", swatch:"linear-gradient(135deg,#4DD0E1,#006064)" },
+  { id:"title_godmode",  type:"title",  tag:"Title",      name:"God Mode",       desc:"Untouchable.",                             cost:20000,  art:"⚡", swatch:"linear-gradient(135deg,#FF00FF,#00FFFF)" },
+  { id:"title_phantom",  type:"title",  tag:"Title",      name:"Phantom",        desc:"Ghost in the machine.",                    cost:3000,   art:"👻", swatch:"linear-gradient(135deg,#ECEFF1,#546E7A)" },
+  { id:"title_wizard",   type:"title",  tag:"Title",      name:"Wizard",         desc:"Master of the points.",                    cost:4000,   art:"🧙", swatch:"linear-gradient(135deg,#B673FF,#311B92)" },
+  { id:"title_beast",    type:"title",  tag:"Title",      name:"Beast Mode",     desc:"Unstoppable.",                             cost:6000,   art:"🦁", swatch:"linear-gradient(135deg,#FF6B00,#7a2c00)" },
 ];
 
-/* ============================================================
-   >>> AD PLACEMENT + FREQUENCY CAPS  (compliant defaults — tune
-   carefully; loosening these is what gets accounts flagged)
-   ============================================================ */
+// Keep CATALOG pointing to STORE for backward compat
+const CATALOG = STORE.filter(i=>i.type==='theme'||i.type==='badge'||i.type==='unlock');
+
+
 const ADS = {
   bannerScreens: ["shop","stuff","profile"],  // never on the Grind hero
   interstitialEveryNRewarded: 5,   // arm after this many rewarded watches
@@ -642,20 +705,6 @@ const ADS = {
   nativeEveryNItems: 6,            // 1 labeled native card per N shop items
   fullscreenLenSec: 5              // simulated full-screen length (web only)
 };
-
-/* ---- Starter catalog (closed-loop items only). Move to a
-   Firestore "catalog" collection later if you want a remote-editable
-   shop; hardcoded here so the app works on day one. ---- */
-const CATALOG = [
-  { id:"theme_ember",  type:"theme", name:"Ember",      desc:"Coral + ember dark theme.",  cost:150,  tag:"Theme", colors:{coral:"#FF5470", gold:"#FFC24B"}, swatch:"linear-gradient(135deg,#FF5470,#FFC24B)" },
-  { id:"theme_toxic",  type:"theme", name:"Toxic",      desc:"Acid green high-contrast.",   cost:300,  tag:"Theme", colors:{coral:"#9DFF3C", gold:"#C6FF6A"}, swatch:"linear-gradient(135deg,#9DFF3C,#1f3b12)" },
-  { id:"theme_frost",  type:"theme", name:"Frost",      desc:"Icy blue + cyan accents.",    cost:300,  tag:"Theme", colors:{coral:"#54C9FF", gold:"#7BE0FF"}, swatch:"linear-gradient(135deg,#54C9FF,#1b3a52)" },
-  { id:"theme_royal",  type:"theme", name:"Royal",      desc:"Gold on deep violet.",        cost:500,  tag:"Theme", colors:{coral:"#B673FF", gold:"#FFD86B"}, swatch:"linear-gradient(135deg,#FFD86B,#6a3bb3)" },
-  { id:"badge_starter",type:"badge", name:"Day One",    desc:"Proof you were here early.",  cost:100,  tag:"Badge", swatch:"radial-gradient(circle at 40% 35%,#FFE6A8,#FFC24B 70%,#A8853A)" },
-  { id:"badge_grinder",type:"badge", name:"Grinder",    desc:"For the dedicated.",          cost:800,  tag:"Badge", swatch:"radial-gradient(circle at 40% 35%,#FF8DA3,#FF5470 70%,#9c2e44)" },
-  { id:"unlock_2x",    type:"unlock",name:"2x Streak",  desc:"Cosmetic streak flair.",      cost:1200, tag:"Unlock",swatch:"linear-gradient(135deg,#FFC24B,#FF5470)" },
-  { id:"unlock_dark",  type:"unlock",name:"Stealth",    desc:"All-black minimal skin.",     cost:1500, tag:"Unlock",swatch:"linear-gradient(135deg,#2d2040,#0a0710)" }
-];
 
 /* ============================================================
    STATE  +  PERSISTENCE
@@ -780,12 +829,8 @@ async function loadUser(userId){
 
 function showApp(){
   applyEquippedTheme();
-  if(!FEATURES.rewards){
-    const t=document.getElementById('tabPrizes'); if(t) t.style.display="none";
-    const v=document.getElementById('view-prizes'); if(v) v.remove();
-  }
   renderAll();
-  updateBanner("grind");
+  updateBanner("challenges");
   const isNative = navigator.userAgent.includes('AdGrindApp');
   if(!isNative && ADS.appOpenColdStart){ setTimeout(showAppOpen, 600); }
 }
@@ -911,7 +956,7 @@ function tweenCounter(from,to,ms){
 /* ============================================================
    RENDER
    ============================================================ */
-function renderAll(){ renderGrind(); renderBalance(); renderShop(); renderStuff(); renderRewards(); renderChallenges(); renderProfile(); }
+function renderAll(){ renderGrind(); renderBalance(); renderShop(); renderStuff(); renderChallenges(); renderProfile(); }
 
 function renderBalance(){
   document.getElementById('balVal').textContent = state.points.toLocaleString();
@@ -927,48 +972,54 @@ function renderGrind(){
   document.getElementById('dailyBar').style.width = pct + "%";
   const capped = state.dailyAdsWatched >= ECON.dailyAdCap;
   grindBtn.disabled = capped;
-  grindBtn.firstChild.textContent = capped ? "Come back tomorrow " : "Watch an ad ";
+  grindBtn.firstChild.textContent = capped ? "Come back tomorrow " : "Watch a rewarded ad ";
   document.getElementById('grindHint').textContent = capped
-    ? "You've hit today's limit. The grind resets at midnight."
-    : "Watch an optional rewarded ad and earn Grind Points. Spend them on digital unlocks in the Shop.";
+    ? "You've hit today's boost limit. Resets at midnight."
+    : "Optional — watch a rewarded ad for bonus points on top of your daily tasks.";
 }
 
+let activeCat = "all";
+
 function renderShop(){
-  const grid=document.getElementById('shopGrid');
-  const cards = CATALOG.map(item=>{
-    const owned = state.owned.includes(item.id);
+  const grid = document.getElementById('shopGrid');
+  const items = activeCat==="all" ? STORE : STORE.filter(i=>i.type===activeCat);
+  const cards = items.map(item=>{
+    const owned = state.owned.includes(item.id) || item.cost===0;
     const afford = state.points >= item.cost;
     const swatch = item.swatch || "var(--surface-2)";
     let btn;
-    if(owned){ btn = `<button class="buy owned" disabled>Owned</button>`; }
-    else { btn = `<button class="buy" data-buy="${item.id}" ${afford?"":"disabled"}>${afford?"Buy":"Need more"}</button>`; }
+    if(owned){ btn=`<button class="buy owned" disabled>Owned</button>`; }
+    else { btn=`<button class="buy" data-buy="${item.id}" ${afford?"":"disabled"}>${afford?"Unlock":"Need more"}</button>`; }
     return `<div class="card">
       <span class="tag">${item.tag}</span>
-      <div class="swatch" style="background:${swatch}"></div>
+      <div class="swatch" style="background:${swatch};display:flex;align-items:center;justify-content:center;font-size:${item.type==='collect'||item.type==='badge'?'38':'22'}px">${item.type==='collect'||item.type==='badge'||item.type==='title'?item.art:''}</div>
       <div class="name">${item.name}</div>
       <div class="desc">${item.desc}</div>
-      <div class="price"><span class="coin"></span>${item.cost.toLocaleString()}</div>
+      <div class="price"><span class="coin"></span>${item.cost===0?'Free':item.cost.toLocaleString()}</div>
       ${btn}
     </div>`;
   });
-  // splice in a labeled native ad every N items
-  const nativeCard = `<div class="card native">
-      <span class="tag">Ad</span>
-      <div class="creative">Native ad slot</div>
-      <div class="name">Sponsored</div>
-      <div class="desc">Promoted content blends into the grid.</div>
-      <div class="adcta">Learn more</div>
-    </div>`;
+  // native ad every N items
+  const nativeCard=`<div class="card native"><span class="tag">Ad</span><div class="creative">Native ad slot</div><div class="name">Sponsored</div><div class="desc">Promoted content.</div><div class="adcta">Learn more</div></div>`;
   const out=[];
-  cards.forEach((c,i)=>{ out.push(c); if((i+1)%ADS.nativeEveryNItems===0 && i<cards.length-1) out.push(nativeCard); });
+  cards.forEach((c,i)=>{ out.push(c); if((i+1)%ADS.nativeEveryNItems===0&&i<cards.length-1) out.push(nativeCard); });
   grid.innerHTML = out.join("");
   grid.querySelectorAll('[data-buy]').forEach(b=>{
     b.addEventListener('click',()=>buyItem(b.getAttribute('data-buy')));
   });
 }
 
+// Wire category tab clicks
+document.getElementById('catTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('.cat-tab');
+  if(!btn) return;
+  activeCat = btn.getAttribute('data-cat');
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.toggle('active',t===btn));
+  renderShop();
+});
+
 function renderStuff(){
-  const owned = CATALOG.filter(i=>state.owned.includes(i.id));
+  const owned = STORE.filter(i=>state.owned.includes(i.id)||i.cost===0);
   const grid=document.getElementById('stuffGrid');
   const empty=document.getElementById('stuffEmpty');
   if(owned.length===0){ grid.innerHTML=""; empty.style.display="block"; return; }
@@ -976,15 +1027,13 @@ function renderStuff(){
   grid.innerHTML = owned.map(item=>{
     const isTheme = item.type==="theme";
     const equipped = state.equipped===item.id;
+    const swatch = item.swatch||"var(--surface-2)";
     let btn;
-    if(isTheme){
-      btn = `<button class="buy ${equipped?'equipped':''}" data-equip="${item.id}">${equipped?'Equipped':'Equip'}</button>`;
-    } else {
-      btn = `<button class="buy owned" disabled>Owned</button>`;
-    }
+    if(isTheme){ btn=`<button class="buy ${equipped?'equipped':''}" data-equip="${item.id}">${equipped?'Equipped':'Equip'}</button>`; }
+    else { btn=`<button class="buy owned" disabled>Owned</button>`; }
     return `<div class="card">
       <span class="tag">${item.tag}</span>
-      <div class="swatch" style="background:${item.swatch||'var(--surface-2)'}"></div>
+      <div class="swatch" style="background:${swatch};display:flex;align-items:center;justify-content:center;font-size:${item.type==='collect'||item.type==='badge'?'38':'22'}px">${item.type==='collect'||item.type==='badge'||item.type==='title'?item.art:''}</div>
       <div class="name">${item.name}</div>
       <div class="desc">${item.desc}</div>
       ${btn}
@@ -1093,58 +1142,6 @@ document.getElementById('acctSubmit').addEventListener('click', async()=>{
 });
 
 /* ============================================================
-   REWARDS CATALOG  (redeem points for physical goods)
-   ============================================================ */
-function renderRewards(){
-  const grid=document.getElementById('rewardsGrid');
-  grid.innerHTML = REWARDS.map(item=>{
-    const owned = state.owned.includes(item.id);
-    const afford = state.points >= item.cost;
-    if(owned){
-      return `<div class="card">
-        <div class="reward-art">${item.art}</div>
-        <div class="name">${item.name}</div>
-        <div class="desc">${item.desc}</div>
-        <div class="pts"><span class="coin"></span>${item.cost.toLocaleString()}</div>
-        <button class="redeem buy owned" disabled>Unlocked</button>
-      </div>`;
-    }
-    return `<div class="card">
-      <div class="reward-art">${item.art}</div>
-      <div class="name">${item.name}</div>
-      <div class="desc">${item.desc}</div>
-      <div class="pts"><span class="coin"></span>${item.cost.toLocaleString()}</div>
-      <button class="redeem" data-redeem="${item.id}" ${afford?"":"disabled"}>${afford?"Unlock":"Keep grinding"}</button>
-    </div>`;
-  }).join("");
-  grid.querySelectorAll('[data-redeem]').forEach(b=>{
-    b.addEventListener('click',()=>redeemItem(b.getAttribute('data-redeem')));
-  });
-  // unlocked items list
-  const wrap=document.getElementById('redemptionList');
-  const unlocked = REWARDS.filter(i=>state.owned.includes(i.id));
-  if(unlocked.length===0){ wrap.innerHTML=""; return; }
-  wrap.innerHTML = `<div class="redemptions"><h3>Unlocked</h3>` +
-    unlocked.map(item=>`<div class="redemption">
-      <span class="ra">${item.art}</span>
-      <span class="rn">${item.name}</span>
-      <span class="rs">Owned</span>
-    </div>`).join("") + `</div>`;
-}
-
-async function redeemItem(id){
-  const item = REWARDS.find(i=>i.id===id);
-  if(!item) return;
-  if(state.owned.includes(id)){ toast("Already unlocked"); return; }
-  if(state.points < item.cost){ toast("Not enough points"); return; }
-  state.points -= item.cost;
-  state.owned.push(id);
-  await save();
-  tweenCounter(displayedPoints, state.points, 400);
-  renderAll();
-  toast(item.name + " unlocked!");
-}
-
 /* ============================================================
    CHALLENGES ENGINE — 17 daily tasks, streaks, weekly bonus
    ============================================================ */
@@ -1672,7 +1669,7 @@ function playMilestone(task){
    BUY / EQUIP
    ============================================================ */
 async function buyItem(id){
-  const item = CATALOG.find(i=>i.id===id);
+  const item = STORE.find(i=>i.id===id);
   if(!item || state.owned.includes(id)) return;
   if(state.points < item.cost){ toast("Not enough points"); return; }
   state.points -= item.cost;
@@ -1693,10 +1690,9 @@ async function equipTheme(id){
 
 function applyEquippedTheme(){
   const root=document.documentElement;
-  // reset to defaults
   root.style.removeProperty('--coral'); root.style.removeProperty('--gold');
   if(state.equipped){
-    const t = CATALOG.find(i=>i.id===state.equipped);
+    const t = STORE.find(i=>i.id===state.equipped);
     if(t && t.colors){
       if(t.colors.coral) root.style.setProperty('--coral', t.colors.coral);
       if(t.colors.gold)  root.style.setProperty('--gold', t.colors.gold);
