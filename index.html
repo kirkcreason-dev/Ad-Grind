@@ -356,22 +356,51 @@
     </section>
 
     <section class="view" id="view-profile">
-      <h2 class="sec-head">Profile</h2>
-      <p class="sec-sub">Your grind, all time.</p>
-      <div class="stat-row">
-        <div class="stat"><div class="k">Lifetime points</div><div class="v" id="statLifetime">0</div></div>
-        <div class="stat"><div class="k">Ads watched</div><div class="v" id="statAds">0</div></div>
+      <h2 class="sec-head">Account</h2>
+
+      <!-- Signed in state -->
+      <div id="accountSignedIn" style="display:none">
+        <div class="stat-row">
+          <div class="stat"><div class="k">Lifetime points</div><div class="v" id="statLifetime">0</div></div>
+          <div class="stat"><div class="k">Ads watched</div><div class="v" id="statAds">0</div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="k">Current balance</div><div class="v" id="statBal">0</div></div>
+          <div class="stat"><div class="k">Items owned</div><div class="v" id="statItems">0</div></div>
+        </div>
+        <div class="profile-id">
+          <div class="k">Signed in as</div>
+          <div class="v" id="playerId">—</div>
+        </div>
+        <div class="modepill" id="modePill"><i></i><span id="modeText">Saving to Firebase</span></div>
+        <button class="ghost-btn" id="signOutBtn" onclick="signOut()">Sign out</button>
       </div>
-      <div class="stat-row">
-        <div class="stat"><div class="k">Current balance</div><div class="v" id="statBal">0</div></div>
-        <div class="stat"><div class="k">Items owned</div><div class="v" id="statItems">0</div></div>
+
+      <!-- Signed out / local mode state -->
+      <div id="accountSignedOut">
+        <p class="sec-sub" style="margin-bottom:20px">Sign in to save your points and unlocks across devices.</p>
+
+        <div class="login-err" id="accountErr"></div>
+
+        <!-- Email form -->
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+          <input type="email" id="acctEmail" placeholder="Email address"
+            style="background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter';font-size:15px;padding:14px 16px;border-radius:12px;outline:none;width:100%" />
+          <input type="password" id="acctPass" placeholder="Password"
+            style="background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter';font-size:15px;padding:14px 16px;border-radius:12px;outline:none;width:100%" />
+          <input type="password" id="acctConfirm" placeholder="Confirm password" style="background:var(--surface);border:1px solid var(--line);color:var(--text);font-family:'Inter';font-size:15px;padding:14px 16px;border-radius:12px;outline:none;width:100%;display:none" />
+        </div>
+
+        <button class="grind-btn" id="acctSubmit" style="margin-top:0;font-size:16px;padding:16px">Sign in</button>
+
+        <div style="display:flex;justify-content:space-between;margin-top:14px">
+          <span id="acctToggle" style="color:var(--coral);font-size:13px;font-weight:600;cursor:pointer">No account? Create one</span>
+          <span id="acctForgot" style="color:var(--muted);font-size:13px;cursor:pointer">Forgot password?</span>
+        </div>
+
+        <div class="modepill" id="modePill2" style="margin-top:18px"><i></i><span id="modeText2">Local mode — progress resets on refresh</span></div>
       </div>
-      <div class="profile-id">
-        <div class="k">Player ID</div>
-        <div class="v" id="playerId">—</div>
-      </div>
-      <div class="modepill" id="modePill"><i></i><span id="modeText">Local mode — add Firebase to save progress</span></div>
-      <button class="ghost-btn" id="signOutBtn" onclick="signOut()" style="display:none">Sign out</button>
+
     </section>
 
   </main>
@@ -396,7 +425,7 @@
     </button>
     <button class="tab" data-tab="profile">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
-      Profile
+      Account
     </button>
   </nav>
 
@@ -637,16 +666,20 @@ async function initBackend(){
     showApp(); return;
   }
 
-  // Web browser flow
+  // Web browser flow — no login screen, Account tab handles sign in
   const configured = !firebaseConfig.apiKey.startsWith("PASTE");
   if(configured){
     try{
       firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth();
-      db = firebase.firestore();
+      auth = firebase.auth(); db = firebase.firestore();
       auth.onAuthStateChanged(async user=>{
-        if(user){ await loadUser(user.uid); showApp(); }
-        else { showLoginScreen(); }
+        if(user && !user.isAnonymous){
+          await loadUser(user.uid);
+        } else if(!user) {
+          // Sign in anonymously so Firestore rules pass
+          await auth.signInAnonymously().catch(()=>{});
+        }
+        showApp();
       });
       useFirebase = true;
     }catch(e){
@@ -702,9 +735,12 @@ function showApp(){
   }
   renderAll();
   updateBanner("grind");
-  // App open ad handled natively on Android — only show on web
   const isNative = navigator.userAgent.includes('AdGrindApp');
   if(!isNative && ADS.appOpenColdStart){ setTimeout(showAppOpen, 600); }
+}
+
+function showLoginScreen(){
+  // No-op — Account tab handles sign in now
 }
 
 /* ============================================================
@@ -989,20 +1025,97 @@ function renderProfile(){
   document.getElementById('statAds').textContent = state.adsWatched.toLocaleString();
   document.getElementById('statBal').textContent = state.points.toLocaleString();
   document.getElementById('statItems').textContent = state.owned.length;
-  const user = useFirebase && auth ? auth.currentUser : null;
-  document.getElementById('playerId').textContent = user ? (user.email || user.displayName || uid) : (uid || "—");
-  const pill=document.getElementById('modePill');
-  const signOutBtn=document.getElementById('signOutBtn');
-  if(useFirebase){
+
+  const signedIn = useFirebase && auth && auth.currentUser && !auth.currentUser.isAnonymous;
+  document.getElementById('accountSignedIn').style.display = signedIn ? "" : "none";
+  document.getElementById('accountSignedOut').style.display = signedIn ? "none" : "";
+
+  if(signedIn){
+    const user = auth.currentUser;
+    document.getElementById('playerId').textContent = user.email || user.uid;
+    const pill = document.getElementById('modePill');
     pill.classList.add('live');
-    document.getElementById('modeText').textContent = user?.email ? "Signed in · Saving to Firebase" : "Saving to Firebase";
-    signOutBtn.style.display = "";
+    document.getElementById('modeText').textContent = "Signed in · Saving to Firebase";
   } else {
-    pill.classList.remove('live');
-    document.getElementById('modeText').textContent="Local mode — sign in to save progress";
-    signOutBtn.style.display = "none";
+    const pill2 = document.getElementById('modePill2');
+    if(useFirebase){ pill2.classList.add('live'); document.getElementById('modeText2').textContent = "Saving to Firebase"; }
+    else { pill2.classList.remove('live'); document.getElementById('modeText2').textContent = "Local mode — sign in to save progress"; }
   }
 }
+
+/* ============================================================
+   IN-TAB SIGN IN / SIGN UP
+   ============================================================ */
+let acctMode = "signin";
+
+document.getElementById('acctToggle').addEventListener('click',()=>{
+  acctMode = acctMode==="signin" ? "signup" : "signin";
+  const isSignup = acctMode==="signup";
+  document.getElementById('acctConfirm').style.display = isSignup ? "" : "none";
+  document.getElementById('acctSubmit').firstChild.textContent = isSignup ? "Create account " : "Sign in ";
+  document.getElementById('acctToggle').textContent = isSignup ? "Have an account? Sign in" : "No account? Create one";
+  document.getElementById('accountErr').textContent = "";
+});
+
+document.getElementById('acctForgot').addEventListener('click', async()=>{
+  const email = document.getElementById('acctEmail').value.trim();
+  if(!email){ document.getElementById('accountErr').textContent = "Enter your email first."; return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    toast("Reset email sent — check your inbox");
+  }catch(e){ document.getElementById('accountErr').textContent = "Couldn't send reset email."; }
+});
+
+document.getElementById('acctSubmit').addEventListener('click', async()=>{
+  const email = document.getElementById('acctEmail').value.trim();
+  const pass  = document.getElementById('acctPass').value;
+  const conf  = document.getElementById('acctConfirm').value;
+  const errEl = document.getElementById('accountErr');
+  errEl.textContent = "";
+
+  if(!email || !pass){ errEl.textContent = "Fill in email and password."; return; }
+  if(acctMode==="signup" && pass.length < 6){ errEl.textContent = "Password must be 6+ characters."; return; }
+  if(acctMode==="signup" && pass !== conf){ errEl.textContent = "Passwords don't match."; return; }
+
+  const btn = document.getElementById('acctSubmit');
+  btn.disabled = true;
+
+  try{
+    if(!auth){
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+    }
+    if(acctMode==="signup"){
+      await auth.createUserWithEmailAndPassword(email, pass);
+    } else {
+      await auth.signInWithEmailAndPassword(email, pass);
+    }
+    const user = auth.currentUser;
+    uid = user.uid;
+    useFirebase = true;
+    userRef = db.collection("users").doc(uid);
+    const snap = await userRef.get();
+    if(snap.exists){ state = Object.assign(state, snap.data()); }
+    else { await userRef.set(state); }
+    if(!Array.isArray(state.redemptions)) state.redemptions = [];
+    await save();
+    renderAll();
+    toast(acctMode==="signup" ? "Account created!" : "Signed in!");
+  }catch(e){
+    const msgs = {
+      "auth/email-already-in-use":"That email already has an account.",
+      "auth/user-not-found":"No account with that email.",
+      "auth/wrong-password":"Wrong password.",
+      "auth/invalid-credential":"Wrong email or password.",
+      "auth/invalid-email":"Invalid email address.",
+      "auth/too-many-requests":"Too many attempts. Try later."
+    };
+    errEl.textContent = msgs[e.code] || "Something went wrong. Try again.";
+  }finally{
+    btn.disabled = false;
+  }
+});
 
 /* ============================================================
    REWARDS CATALOG  (redeem points for physical goods)
