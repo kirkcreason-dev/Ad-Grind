@@ -443,6 +443,16 @@
         </div>
         <div class="modepill" id="modePill"><i></i><span id="modeText">Saving to Firebase</span></div>
         <button class="ghost-btn" id="signOutBtn" onclick="signOut()">Sign out</button>
+        <button class="ghost-btn" id="deleteAcctBtn" onclick="deleteAccount()" style="margin-top:8px;border-color:var(--coral);color:var(--coral)">Delete account & data</button>
+        <p style="color:var(--muted);font-size:11.5px;text-align:center;margin-top:14px;line-height:1.6">
+          You can also request deletion at<br>
+          <a href="https://kirkcreason-dev.github.io/Ad-Grind/delete" target="_blank" style="color:var(--coral)">kirkcreason-dev.github.io/Ad-Grind/delete</a>
+        </p>
+        <p style="color:var(--muted);font-size:11.5px;text-align:center;margin-top:8px">
+          <a href="https://kirkcreason-dev.github.io/Ad-Grind/privacy" target="_blank" style="color:var(--muted)">Privacy Policy</a>
+          &nbsp;·&nbsp;
+          <a href="https://kirkcreason-dev.github.io/Ad-Grind/terms" target="_blank" style="color:var(--muted)">Terms of Use</a>
+        </p>
       </div>
 
       <!-- Signed out / local mode state -->
@@ -468,6 +478,11 @@
         </div>
 
         <div class="modepill" id="modePill2" style="margin-top:18px"><i></i><span id="modeText2">Local mode — progress resets on refresh</span></div>
+        <p style="color:var(--muted);font-size:11.5px;text-align:center;margin-top:14px">
+          <a href="https://kirkcreason-dev.github.io/Ad-Grind/privacy" target="_blank" style="color:var(--muted)">Privacy Policy</a>
+          &nbsp;·&nbsp;
+          <a href="https://kirkcreason-dev.github.io/Ad-Grind/terms" target="_blank" style="color:var(--muted)">Terms of Use</a>
+        </p>
       </div>
 
     </section>
@@ -838,13 +853,37 @@ function showApp(){
 // Sign out
 async function signOut(){
   if(useFirebase && auth){ await auth.signOut(); }
-  state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[] };
+  state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[], streak:0, lastCheckIn:"", weekCheckins:[], tasksDone:{} };
   userRef = null; uid = null; useFirebase = false;
   renderAll();
-  // Switch to Account tab so user sees sign-in form
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.getAttribute('data-tab')==='profile'));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-profile'));
   toast("Signed out");
+}
+
+// Delete account — removes Firestore data then deletes Firebase Auth account
+async function deleteAccount(){
+  if(!confirm("Permanently delete your account and all data? This cannot be undone.")) return;
+  const btn = document.getElementById('deleteAcctBtn');
+  if(btn){ btn.disabled=true; btn.textContent="Deleting…"; }
+  try{
+    if(userRef){ await userRef.delete().catch(()=>{}); }
+    const user = auth ? auth.currentUser : null;
+    if(user){ await user.delete(); }
+    state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[], streak:0, lastCheckIn:"", weekCheckins:[], tasksDone:{} };
+    userRef = null; uid = null; useFirebase = false;
+    renderAll();
+    toast("Account and data permanently deleted.");
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.getAttribute('data-tab')==='profile'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-profile'));
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent="Delete account & data"; }
+    if(e.code==='auth/requires-recent-login'){
+      toast("Sign out and sign back in first, then try deleting again.");
+    } else {
+      toast("Deletion failed. Email support@creasocamps.com for help.");
+    }
+  }
 }
 
 async function save(){

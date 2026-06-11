@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Delete Your Account — Ad Grind</title>
+<style>
+  :root{ --ink:#160F1C; --text:#EFE7F5; --muted:#9685A6; --coral:#FF5470; --surface:#221730; --line:#3A2C4A; --good:#5AD1B0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--ink); color:var(--text); font-family:'Inter',system-ui,sans-serif; line-height:1.7; padding:40px 20px 80px; max-width:600px; margin:0 auto; }
+  h1{ font-size:26px; color:var(--coral); margin-bottom:6px; }
+  .sub{ color:var(--muted); font-size:14px; margin-bottom:32px; }
+  p{ margin-bottom:14px; color:#cfc4d8; font-size:15px; }
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px; margin-bottom:20px; }
+  .card h2{ font-size:16px; margin-bottom:10px; }
+  .method{ display:flex; gap:14px; align-items:flex-start; margin-bottom:16px; }
+  .num{ width:28px; height:28px; border-radius:50%; background:var(--coral); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+  .method-text{ flex:1; }
+  .method-text strong{ display:block; margin-bottom:4px; font-size:15px; }
+  .method-text span{ color:var(--muted); font-size:13.5px; }
+  label{ display:block; color:var(--muted); font-size:13px; margin-bottom:6px; margin-top:16px; }
+  input, textarea{ width:100%; background:#2d2040; border:1px solid var(--line); color:var(--text); font-family:'Inter',sans-serif; font-size:15px; padding:12px 14px; border-radius:10px; outline:none; }
+  textarea{ height:100px; resize:vertical; }
+  input:focus, textarea:focus{ border-color:var(--coral); }
+  button{ margin-top:16px; width:100%; background:var(--coral); color:#fff; font-weight:700; font-size:15px; padding:14px; border-radius:12px; border:none; cursor:pointer; font-family:'Inter'; }
+  button:disabled{ opacity:.5; cursor:not-allowed; }
+  .success{ background:#1a3d2a; border:1px solid var(--good); border-radius:12px; padding:16px; color:var(--good); font-size:14px; display:none; margin-top:16px; }
+  .back{ display:inline-block; margin-bottom:32px; color:var(--muted); font-size:14px; text-decoration:none; }
+  .back:hover{ color:var(--coral); }
+  .warn{ background:#3d1a1a; border:1px solid var(--coral); border-radius:10px; padding:14px; color:#ff9999; font-size:13.5px; margin-bottom:16px; }
+</style>
+</head>
+<body>
+<a class="back" href="/">← Back to Ad Grind</a>
+<h1>Delete Your Account</h1>
+<p class="sub">Permanently remove your account and all associated data from Ad Grind.</p>
+
+<div class="warn">⚠️ Deletion is permanent and cannot be undone. Your Grind Points, unlocked items, streak, and task history will be lost forever.</div>
+
+<div class="card">
+  <h2>Option 1 — Delete inside the app (instant)</h2>
+  <div class="method">
+    <div class="num">1</div>
+    <div class="method-text">
+      <strong>Open Ad Grind</strong>
+      <span>Launch the app on your device</span>
+    </div>
+  </div>
+  <div class="method">
+    <div class="num">2</div>
+    <div class="method-text">
+      <strong>Go to the Account tab</strong>
+      <span>Tap the Account icon in the bottom nav</span>
+    </div>
+  </div>
+  <div class="method">
+    <div class="num">3</div>
+    <div class="method-text">
+      <strong>Tap "Delete account &amp; data"</strong>
+      <span>Confirm the prompt — your account and all data are immediately deleted</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Option 2 — Request deletion by email</h2>
+  <p style="font-size:14px">If you cannot access the app, submit your request below. We will complete deletion within 30 days and send a confirmation email.</p>
+
+  <form id="deleteForm">
+    <label for="emailField">Email address on your account</label>
+    <input type="email" id="emailField" placeholder="you@example.com" required />
+
+    <label for="reasonField">Reason (optional)</label>
+    <textarea id="reasonField" placeholder="Tell us why you're leaving (optional)"></textarea>
+
+    <button type="submit" id="submitBtn">Submit deletion request</button>
+    <div class="success" id="successMsg">
+      ✓ Request received. We'll delete your account within 30 days and confirm by email. If you don't hear back, contact <a href="mailto:support@creasocamps.com" style="color:var(--good)">support@creasocamps.com</a>.
+    </div>
+  </form>
+</div>
+
+<p style="font-size:13px;color:var(--muted);text-align:center">
+  Questions? <a href="mailto:support@creasocamps.com" style="color:var(--coral)">support@creasocamps.com</a><br>
+  <a href="privacy.html" style="color:var(--muted)">Privacy Policy</a>
+</p>
+
+<script>
+document.getElementById('deleteForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const email = document.getElementById('emailField').value.trim();
+  if(!email) return;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  // Opens mail client with pre-filled deletion request
+  const subject = encodeURIComponent('Account Deletion Request — Ad Grind');
+  const body = encodeURIComponent(
+    'Please delete my Ad Grind account and all associated data.\n\n' +
+    'Email: ' + email + '\n\n' +
+    'Reason: ' + (document.getElementById('reasonField').value || 'Not provided') + '\n\n' +
+    'I understand this is permanent and cannot be undone.'
+  );
+  window.location.href = 'mailto:support@creasocamps.com?subject=' + subject + '&body=' + body;
+  setTimeout(()=>{
+    document.getElementById('successMsg').style.display = 'block';
+    btn.textContent = 'Request submitted';
+  }, 1000);
+});
+</script>
+</body>
+</html>
