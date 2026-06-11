@@ -437,34 +437,6 @@
 </div>
 
 <!-- login screen -->
-<div class="login-scrim" id="loginScrim">
-  <div class="login-logo"><span class="dot"></span>Ad Grind</div>
-  <p class="login-tagline">Watch optional rewarded ads, earn Grind Points,<br>and unlock digital themes, badges &amp; premium features.</p>
-
-  <div class="login-btns">
-    <!-- Apple (needs Apple Developer account — coming soon) -->
-    <button class="login-btn apple-soon" disabled>
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-      Apple — coming soon
-    </button>
-  </div>
-
-  <div class="login-divider">or</div>
-
-  <!-- Email form (toggles between sign-in and sign-up) -->
-  <div class="email-form" id="emailForm">
-    <div class="login-err" id="loginErr"></div>
-    <input type="email" id="emailInput" placeholder="Email address" autocomplete="email" />
-    <input type="password" id="passInput" placeholder="Password (6+ characters)" autocomplete="current-password" />
-    <input type="password" id="confirmInput" placeholder="Confirm password" autocomplete="new-password" style="display:none" />
-    <button class="submit" id="emailSubmit">Sign in</button>
-    <div class="login-toggle" id="loginToggle">No account? <span id="toggleLink">Create one</span></div>
-    <div class="login-toggle"><span id="forgotLink">Forgot password?</span></div>
-  </div>
-
-  <button class="login-skip" id="loginSkip">Skip for now (progress won't be saved)</button>
-</div>
-
 <!-- ad modal -->
 <div class="scrim" id="adScrim">
   <div class="ad">
@@ -727,7 +699,6 @@ async function loadUser(userId){
 }
 
 function showApp(){
-  document.getElementById('loginScrim').classList.add('hidden');
   applyEquippedTheme();
   if(!FEATURES.rewards){
     const t=document.getElementById('tabPrizes'); if(t) t.style.display="none";
@@ -739,93 +710,17 @@ function showApp(){
   if(!isNative && ADS.appOpenColdStart){ setTimeout(showAppOpen, 600); }
 }
 
-function showLoginScreen(){
-  // No-op — Account tab handles sign in now
-}
-
-/* ============================================================
-   LOGIN SCREEN
-   ============================================================ */
-let loginMode = "signin"; // or "signup"
-
-function showLoginScreen(){
-  document.getElementById('loginScrim').classList.remove('hidden');
-}
-
-function setLoginErr(msg){ document.getElementById('loginErr').textContent = msg || ""; }
-
-// Toggle signin / signup
-document.getElementById('toggleLink').addEventListener('click',()=>{
-  loginMode = loginMode==="signin" ? "signup" : "signin";
-  const isSignup = loginMode==="signup";
-  document.getElementById('confirmInput').style.display = isSignup ? "" : "none";
-  document.getElementById('emailSubmit').textContent = isSignup ? "Create account" : "Sign in";
-  document.getElementById('loginToggle').innerHTML = isSignup
-    ? `Have an account? <span id="toggleLink">Sign in</span>`
-    : `No account? <span id="toggleLink">Create one</span>`;
-  document.getElementById('toggleLink').addEventListener('click', arguments.callee.bind(null));
-  setLoginErr();
-});
-
-// Forgot password
-document.getElementById('forgotLink').addEventListener('click', async()=>{
-  const email = document.getElementById('emailInput').value.trim();
-  if(!email){ setLoginErr("Enter your email first."); return; }
-  try{
-    await auth.sendPasswordResetEmail(email);
-    setLoginErr(""); toast("Reset email sent — check your inbox");
-  }catch(e){ setLoginErr("Couldn't send reset email. Check the address."); }
-});
-
-// Email submit (sign in or sign up)
-document.getElementById('emailSubmit').addEventListener('click', async()=>{
-  const email = document.getElementById('emailInput').value.trim();
-  const pass  = document.getElementById('passInput').value;
-  const conf  = document.getElementById('confirmInput').value;
-  setLoginErr();
-  if(!email || !pass){ setLoginErr("Fill in email and password."); return; }
-  if(loginMode==="signup"){
-    if(pass.length < 6){ setLoginErr("Password must be 6+ characters."); return; }
-    if(pass !== conf){ setLoginErr("Passwords don't match."); return; }
-  }
-  const btn = document.getElementById('emailSubmit');
-  btn.disabled = true; btn.textContent = "…";
-  try{
-    if(loginMode==="signup"){
-      await auth.createUserWithEmailAndPassword(email, pass);
-    } else {
-      await auth.signInWithEmailAndPassword(email, pass);
-    }
-  }catch(e){
-    btn.disabled = false;
-    btn.textContent = loginMode==="signup" ? "Create account" : "Sign in";
-    const msgs = {
-      "auth/email-already-in-use":"That email already has an account. Sign in instead.",
-      "auth/user-not-found":"No account with that email. Create one?",
-      "auth/wrong-password":"Wrong password. Try again or reset it.",
-      "auth/invalid-email":"That doesn't look like a valid email.",
-      "auth/too-many-requests":"Too many attempts. Try again later."
-    };
-    setLoginErr(msgs[e.code] || "Something went wrong. Try again.");
-  }
-});
-
-// Skip (anonymous local mode)
-document.getElementById('loginSkip').addEventListener('click',()=>{
-  uid = "local-" + Math.random().toString(36).slice(2,10);
-  useFirebase = false;
-  showApp();
-});
-
-// Sign out (called from Profile)
+// Sign out
 async function signOut(){
   if(useFirebase && auth){ await auth.signOut(); }
   state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[] };
   userRef = null; uid = null; useFirebase = false;
-  showLoginScreen();
+  renderAll();
+  // Switch to Account tab so user sees sign-in form
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.getAttribute('data-tab')==='profile'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-profile'));
+  toast("Signed out");
 }
-
-
 
 async function save(){
   if(useFirebase && userRef){
