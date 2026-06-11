@@ -600,27 +600,37 @@ let adFreq = { rewardedSinceInterstitial:0, lastInterstitialTs:0, lastRewardedTs
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
 async function initBackend(){
-  // If running inside native Android wrapper — auth already handled natively
-  if(window.nativeAuth && window.nativeAuth.uid){
-    uid = window.nativeAuth.uid;
-    const isAnon = window.nativeAuth.isAnonymous;
-    try{
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-      useFirebase = true;
-      userRef = db.collection("users").doc(uid);
-      const snap = await userRef.get();
-      if(snap.exists){ state = Object.assign(state, snap.data()); }
-      else { await userRef.set(state); }
-      if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
-      if(!Array.isArray(state.redemptions)) state.redemptions = [];
-      await save();
-    }catch(e){
-      console.warn("Firebase init failed in native mode", e);
-      useFirebase = false;
+  // Detect native Android wrapper by user agent
+  const isNative = navigator.userAgent.includes('AdGrindApp');
+
+  if(isNative){
+    // Auth handled natively — wait for nativeAuth to be injected
+    // then init Firebase directly without showing login screen
+    let attempts = 0;
+    while(!window.nativeAuth && attempts < 20){
+      await new Promise(r=>setTimeout(r,100));
+      attempts++;
+    }
+    if(window.nativeAuth && window.nativeAuth.uid){
+      uid = window.nativeAuth.uid;
+      try{
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        useFirebase = true;
+        userRef = db.collection("users").doc(uid);
+        const snap = await userRef.get();
+        if(snap.exists){ state = Object.assign(state, snap.data()); }
+        else { await userRef.set(state); }
+        if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
+        if(!Array.isArray(state.redemptions)) state.redemptions = [];
+        await save();
+      }catch(e){ console.warn("Firebase init failed in native mode", e); useFirebase = false; }
+    } else {
+      uid = "native-" + Math.random().toString(36).slice(2,10);
     }
     showApp(); return;
   }
+
   // Web browser flow
   const configured = !firebaseConfig.apiKey.startsWith("PASTE");
   if(configured){
