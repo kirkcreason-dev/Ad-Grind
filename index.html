@@ -604,10 +604,8 @@ async function initBackend(){
   const isNative = navigator.userAgent.includes('AdGrindApp');
 
   if(isNative){
-    // Auth handled natively — wait for nativeAuth to be injected
-    // then init Firebase directly without showing login screen
     let attempts = 0;
-    while(!window.nativeAuth && attempts < 20){
+    while(!window.nativeAuth && attempts < 30){
       await new Promise(r=>setTimeout(r,100));
       attempts++;
     }
@@ -615,16 +613,28 @@ async function initBackend(){
       uid = window.nativeAuth.uid;
       try{
         firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
         db = firebase.firestore();
+        // Sign in with the ID token from native
+        if(window.nativeAuth.token && !window.nativeAuth.isAnonymous){
+          await auth.signInWithCustomToken(window.nativeAuth.token).catch(async()=>{
+            // Custom token failed — try anonymous as fallback
+            await auth.signInAnonymously().catch(()=>{});
+          });
+        } else {
+          await auth.signInAnonymously().catch(()=>{});
+        }
+        const firebaseUid = auth.currentUser ? auth.currentUser.uid : uid;
         useFirebase = true;
-        userRef = db.collection("users").doc(uid);
+        userRef = db.collection("users").doc(firebaseUid);
+        uid = firebaseUid;
         const snap = await userRef.get();
         if(snap.exists){ state = Object.assign(state, snap.data()); }
         else { await userRef.set(state); }
         if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
         if(!Array.isArray(state.redemptions)) state.redemptions = [];
         await save();
-      }catch(e){ console.warn("Firebase init failed in native mode", e); useFirebase = false; }
+      }catch(e){ console.warn("Firebase native init failed", e); useFirebase = false; }
     } else {
       uid = "native-" + Math.random().toString(36).slice(2,10);
     }
