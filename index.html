@@ -600,19 +600,28 @@ let adFreq = { rewardedSinceInterstitial:0, lastInterstitialTs:0, lastRewardedTs
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
 async function initBackend(){
-  // If running inside native Android wrapper with auth already handled
+  // If running inside native Android wrapper — auth already handled natively
   if(window.nativeAuth && window.nativeAuth.uid){
     uid = window.nativeAuth.uid;
-    useFirebase = !window.nativeAuth.isAnonymous;
-    if(useFirebase){
-      try{
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        await loadUserById(uid);
-      }catch(e){ console.warn("Firebase init failed", e); useFirebase = false; }
+    const isAnon = window.nativeAuth.isAnonymous;
+    try{
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      useFirebase = true;
+      userRef = db.collection("users").doc(uid);
+      const snap = await userRef.get();
+      if(snap.exists){ state = Object.assign(state, snap.data()); }
+      else { await userRef.set(state); }
+      if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
+      if(!Array.isArray(state.redemptions)) state.redemptions = [];
+      await save();
+    }catch(e){
+      console.warn("Firebase init failed in native mode", e);
+      useFirebase = false;
     }
     showApp(); return;
   }
+  // Web browser flow
   const configured = !firebaseConfig.apiKey.startsWith("PASTE");
   if(configured){
     try{
@@ -657,6 +666,8 @@ async function loadUser(userId){
   await save();
 }
 
+// Called from native (evaluateJavascript) or from initBackend
+// Safe to call multiple times — checks if already initialized
 function showApp(){
   document.getElementById('loginScrim').classList.add('hidden');
   applyEquippedTheme();
@@ -1114,10 +1125,10 @@ function showAppOpen(){
 function updateBanner(activeTab){
   const show = ADS.bannerScreens.includes(activeTab);
   document.body.classList.toggle('banner-on', show);
-  bannerEl.classList.toggle('show', show);
-  if(window.AdMobBridge){
-    if(show && typeof AdMobBridge.showBanner==="function") AdMobBridge.showBanner("bottom");
-    else if(!show && typeof AdMobBridge.hideBanner==="function") AdMobBridge.hideBanner();
+  // Native banners are always persistent — only update web CSS padding
+  // Don't call hideBanner() as that would remove the native banner
+  if(window.AdMobBridge && typeof AdMobBridge.showBanner==="function"){
+    AdMobBridge.showBanner("both"); // always show both
   }
 }
 
