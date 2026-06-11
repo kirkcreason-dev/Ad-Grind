@@ -600,30 +600,50 @@ let adFreq = { rewardedSinceInterstitial:0, lastInterstitialTs:0, lastRewardedTs
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
 async function initBackend(){
+  // If running inside native Android wrapper with auth already handled
+  if(window.nativeAuth && window.nativeAuth.uid){
+    uid = window.nativeAuth.uid;
+    useFirebase = !window.nativeAuth.isAnonymous;
+    if(useFirebase){
+      try{
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        await loadUserById(uid);
+      }catch(e){ console.warn("Firebase init failed", e); useFirebase = false; }
+    }
+    showApp(); return;
+  }
   const configured = !firebaseConfig.apiKey.startsWith("PASTE");
   if(configured){
     try{
       firebase.initializeApp(firebaseConfig);
       auth = firebase.auth(); db = firebase.firestore();
-      // Listen for auth state — show login screen or load user
       auth.onAuthStateChanged(async user=>{
-        if(user){
-          await loadUser(user.uid);
-          showApp();
-        } else {
-          showLoginScreen();
-        }
+        if(user){ await loadUser(user.uid); showApp(); }
+        else { showLoginScreen(); }
       });
       useFirebase = true;
     }catch(e){
       console.warn("Firebase init failed, local mode:", e);
-      useFirebase = false;
-      showApp();
+      useFirebase = false; showApp();
     }
   } else {
     uid = "local-" + Math.random().toString(36).slice(2,10);
     showApp();
   }
+}
+
+async function loadUserById(userId){
+  uid = userId;
+  userRef = db.collection("users").doc(uid);
+  try{
+    const snap = await userRef.get();
+    if(snap.exists){ state = Object.assign(state, snap.data()); }
+    else { await userRef.set(state); }
+    if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
+    if(!Array.isArray(state.redemptions)) state.redemptions = [];
+    await save();
+  }catch(e){ console.warn("loadUserById failed", e); }
 }
 
 async function loadUser(userId){
