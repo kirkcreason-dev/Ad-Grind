@@ -768,7 +768,7 @@ function showRewardedAd(){
   // Native wrapper bridge takes priority when present
   if(window.AdMobBridge && typeof window.AdMobBridge.showRewarded==="function"){
     window.AdMobBridge.showRewarded(
-      "creditAdReward()",                  // onReward — evaluated as JS by native
+      "window.onAdReward()",               // onReward — sync wrapper, safe for evaluateJavascript
       "console.log('ad dismissed')"        // onDismiss
     );
     return;
@@ -794,6 +794,10 @@ adCloseBtn.addEventListener('click', ()=>{
   adScrim.classList.remove('show');
   creditAdReward();
 });
+
+// Android bridge entry point — called as a string via evaluateJavascript()
+// Must be a simple global function, not async, so Android can fire it reliably
+window.onAdReward = function(){ creditAdReward(); };
 
 async function creditAdReward(){
   state.points += ECON.pointsPerAd;
