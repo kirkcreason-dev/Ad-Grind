@@ -8,10 +8,9 @@
 
 <!-- ============================================================
      AD GRIND — v1
-     Closed-loop points economy. Watch ads -> earn points -> spend
-     on cosmetics/unlocks. No cash, no gift cards, no cashout.
-     Rewards catalog (redeem points for PHYSICAL goods) is in the
-     Rewards tab, behind FEATURES.rewards.
+     Closed-loop digital points economy. Watch optional rewarded ads ->
+     earn Grind Points -> unlock digital themes, badges, and features.
+     Points have no cash value. No physical goods. AdMob compliant.
 
      SETUP (3 things, all marked with  >>> CONFIG  below):
        1. Paste your Firebase web config            (>>> CONFIG 1)
@@ -347,14 +346,12 @@
     <!-- ============ PRIZES (draw) ============ -->
     <section class="view" id="view-prizes">
       <h2 class="sec-head">Rewards</h2>
-      <p class="sec-sub">Redeem points for real gear. Items ship to you — no cash, no gift cards.</p>
+      <p class="sec-sub">Spend Grind Points on digital themes, badges, and premium unlocks.</p>
       <div class="grid" id="rewardsGrid"></div>
-
       <div id="redemptionList"></div>
-
       <p class="legal-line">
-        Rewards are physical merchandise shipped to US addresses. After you redeem,
-        we'll reach out to confirm your shipping details. Allow time for fulfillment.
+        Grind Points have no cash value and cannot be transferred or redeemed for physical items.
+        All rewards are digital and remain within Ad Grind.
       </p>
     </section>
 
@@ -413,7 +410,7 @@
 <!-- login screen -->
 <div class="login-scrim" id="loginScrim">
   <div class="login-logo"><span class="dot"></span>Ad Grind</div>
-  <p class="login-tagline">Watch ads. Bank points.<br>Redeem for real gear.</p>
+  <p class="login-tagline">Watch optional rewarded ads, earn Grind Points,<br>and unlock digital themes, badges &amp; premium features.</p>
 
   <div class="login-btns">
     <!-- Apple (needs Apple Developer account — coming soon) -->
@@ -532,26 +529,23 @@ const ECON = {
 const FEATURES = { rewards: true };   // redemption catalog ON
 
 /* ============================================================
-   >>> REWARDS CATALOG  (redeem points for PHYSICAL goods only)
-   Physical hardware/merch (Xbox, shirts, gear) is fine with AdMob —
-   it is NOT a cash-equivalent. NEVER add gift cards, cash, PayPal,
-   or crypto here; that flips it back into a banned cashout.
-
-   Keep a real range: cheap, attainable items at the bottom and the
-   aspirational Xbox at the top. A catalog that's ONLY an unreachable
-   carrot reads as a deceptive pattern and risks app-store removal —
-   tiers (like airline miles) are what keep it legitimate.
-
-   You fulfill these yourself: a redemption creates a request you ship
-   against. Costs below are points. (1,000,000 pts = the Xbox.)
+   >>> REWARDS CATALOG  (digital unlocks only — AdMob compliant)
+   All items are digital, in-app, non-transferable, no cash value.
+   Physical goods removed per AdMob rewarded ad policy.
    ============================================================ */
 const REWARDS = [
-  { id:"stickers",   name:"Sticker pack",     desc:"Creaso / Norse vinyl stickers.", cost:2000,    art:"🏷️", valueUSD:5   },
-  { id:"tee",        name:"Logo tee",         desc:"Printed shirt, shipped to you.", cost:25000,   art:"👕", valueUSD:20  },
-  { id:"hoodie",     name:"Heavyweight hoodie", desc:"Embroidered logo hoodie.",     cost:60000,   art:"🧥", valueUSD:45  },
-  { id:"controller", name:"Xbox controller",  desc:"Wireless controller.",           cost:120000,  art:"🎮", valueUSD:60  },
-  { id:"giftbox",    name:"Norse swag box",   desc:"Tee + stickers + extras bundle.",cost:200000,  art:"📦", valueUSD:90  },
-  { id:"xbox",       name:"Xbox Series X",    desc:"The big one. Brand new, shipped.",cost:1000000, art:"🕹️", valueUSD:500 }
+  { id:"theme_ember",   name:"Ember Theme",      desc:"Coral + ember dark skin. Permanent unlock.", cost:150,   art:"🔥" },
+  { id:"theme_toxic",   name:"Toxic Theme",       desc:"Acid green high-contrast skin.",             cost:300,   art:"☢️" },
+  { id:"theme_frost",   name:"Frost Theme",       desc:"Icy blue + cyan accent skin.",               cost:300,   art:"❄️" },
+  { id:"theme_royal",   name:"Royal Theme",       desc:"Gold on deep violet skin.",                  cost:500,   art:"👑" },
+  { id:"theme_stealth", name:"Stealth Theme",     desc:"All-black minimal skin.",                    cost:800,   art:"🖤" },
+  { id:"badge_dayone",  name:"Day One Badge",     desc:"Proof you were here at launch.",             cost:100,   art:"⭐" },
+  { id:"badge_grinder", name:"Grinder Badge",     desc:"For the truly dedicated.",                   cost:1000,  art:"💪" },
+  { id:"badge_whale",   name:"Whale Badge",       desc:"Top-tier collector status.",                 cost:5000,  art:"🐋" },
+  { id:"unlock_streak", name:"Streak Flair",      desc:"Animated streak indicator on your counter.",cost:2000,  art:"⚡" },
+  { id:"unlock_pro",    name:"Pro Profile",       desc:"Gold border + Pro tag on your profile.",     cost:3000,  art:"🏆" },
+  { id:"unlock_dark",   name:"Dark Mode Plus",    desc:"Extra dark OLED-optimized skin.",            cost:1500,  art:"🌑" },
+  { id:"unlock_stats",  name:"Stats Unlocked",    desc:"Lifetime detailed stats and charts.",        cost:2500,  art:"📊" }
 ];
 
 /* ============================================================
@@ -594,43 +588,51 @@ let adFreq = { rewardedSinceInterstitial:0, lastInterstitialTs:0, lastRewardedTs
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 
 async function initBackend(){
-  // Detect native Android wrapper by user agent
   const isNative = navigator.userAgent.includes('AdGrindApp');
 
   if(isNative){
+    // Wait up to 3s for native to inject window.nativeAuth
     let attempts = 0;
     while(!window.nativeAuth && attempts < 30){
       await new Promise(r=>setTimeout(r,100));
       attempts++;
     }
-    if(window.nativeAuth && window.nativeAuth.uid){
-      uid = window.nativeAuth.uid;
-      try{
-        firebase.initializeApp(firebaseConfig);
-        auth = firebase.auth();
-        db = firebase.firestore();
-        // Sign in with the ID token from native
-        if(window.nativeAuth.token && !window.nativeAuth.isAnonymous){
-          await auth.signInWithCustomToken(window.nativeAuth.token).catch(async()=>{
-            // Custom token failed — try anonymous as fallback
-            await auth.signInAnonymously().catch(()=>{});
-          });
-        } else {
-          await auth.signInAnonymously().catch(()=>{});
-        }
-        const firebaseUid = auth.currentUser ? auth.currentUser.uid : uid;
-        useFirebase = true;
-        userRef = db.collection("users").doc(firebaseUid);
-        uid = firebaseUid;
-        const snap = await userRef.get();
-        if(snap.exists){ state = Object.assign(state, snap.data()); }
-        else { await userRef.set(state); }
-        if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
-        if(!Array.isArray(state.redemptions)) state.redemptions = [];
-        await save();
-      }catch(e){ console.warn("Firebase native init failed", e); useFirebase = false; }
-    } else {
-      uid = "native-" + Math.random().toString(36).slice(2,10);
+
+    try{
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      auth = firebase.auth();
+
+      // Sign in anonymously in the WebView — we use native UID as the doc key
+      // so data is tied to the native account, not the anon WebView session
+      const nativeUid = (window.nativeAuth && window.nativeAuth.uid) ? window.nativeAuth.uid : null;
+
+      if(nativeUid && !window.nativeAuth.isAnonymous){
+        // Real account — sign in anonymously just to satisfy Firestore rules,
+        // but store data under the native UID
+        await auth.signInAnonymously().catch(()=>{});
+        uid = nativeUid; // Use native UID as the key
+      } else {
+        // Skip user — local mode
+        await auth.signInAnonymously().catch(()=>{});
+        uid = auth.currentUser ? auth.currentUser.uid : "local-" + Math.random().toString(36).slice(2,10);
+      }
+
+      useFirebase = true;
+      userRef = db.collection("users").doc(uid);
+      const snap = await Promise.race([
+        userRef.get(),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),5000))
+      ]);
+      if(snap.exists){ state = Object.assign(state, snap.data()); }
+      else { await userRef.set(state); }
+      if(state.lastAdDate !== todayStr()){ state.dailyAdsWatched = 0; state.lastAdDate = todayStr(); }
+      if(!Array.isArray(state.redemptions)) state.redemptions = [];
+      await save();
+    }catch(e){
+      console.warn("Firebase native init failed:", e.message);
+      useFirebase = false;
+      uid = "local-" + Math.random().toString(36).slice(2,10);
     }
     showApp(); return;
   }
@@ -640,7 +642,8 @@ async function initBackend(){
   if(configured){
     try{
       firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth(); db = firebase.firestore();
+      auth = firebase.auth();
+      db = firebase.firestore();
       auth.onAuthStateChanged(async user=>{
         if(user){ await loadUser(user.uid); showApp(); }
         else { showLoginScreen(); }
@@ -690,8 +693,6 @@ async function loadUser(userId){
   }
 }
 
-// Called from native (evaluateJavascript) or from initBackend
-// Safe to call multiple times — checks if already initialized
 function showApp(){
   document.getElementById('loginScrim').classList.add('hidden');
   applyEquippedTheme();
@@ -701,7 +702,9 @@ function showApp(){
   }
   renderAll();
   updateBanner("grind");
-  if(ADS.appOpenColdStart){ setTimeout(showAppOpen, 600); }
+  // App open ad handled natively on Android — only show on web
+  const isNative = navigator.userAgent.includes('AdGrindApp');
+  if(!isNative && ADS.appOpenColdStart){ setTimeout(showAppOpen, 600); }
 }
 
 /* ============================================================
@@ -916,7 +919,7 @@ function renderGrind(){
   grindBtn.firstChild.textContent = capped ? "Come back tomorrow " : "Watch an ad ";
   document.getElementById('grindHint').textContent = capped
     ? "You've hit today's limit. The grind resets at midnight."
-    : "Tap to watch a rewarded ad and bank points. Spend them in the Shop.";
+    : "Watch an optional rewarded ad and earn Grind Points. Spend them on digital unlocks in the Shop.";
 }
 
 function renderShop(){
@@ -1007,47 +1010,51 @@ function renderProfile(){
 function renderRewards(){
   const grid=document.getElementById('rewardsGrid');
   grid.innerHTML = REWARDS.map(item=>{
+    const owned = state.owned.includes(item.id);
     const afford = state.points >= item.cost;
+    if(owned){
+      return `<div class="card">
+        <div class="reward-art">${item.art}</div>
+        <div class="name">${item.name}</div>
+        <div class="desc">${item.desc}</div>
+        <div class="pts"><span class="coin"></span>${item.cost.toLocaleString()}</div>
+        <button class="redeem buy owned" disabled>Unlocked</button>
+      </div>`;
+    }
     return `<div class="card">
       <div class="reward-art">${item.art}</div>
       <div class="name">${item.name}</div>
       <div class="desc">${item.desc}</div>
       <div class="pts"><span class="coin"></span>${item.cost.toLocaleString()}</div>
-      <div class="arv">approx. $${item.valueUSD} value</div>
-      <button class="redeem" data-redeem="${item.id}" ${afford?"":"disabled"}>${afford?"Redeem":"Keep grinding"}</button>
+      <button class="redeem" data-redeem="${item.id}" ${afford?"":"disabled"}>${afford?"Unlock":"Keep grinding"}</button>
     </div>`;
   }).join("");
   grid.querySelectorAll('[data-redeem]').forEach(b=>{
     b.addEventListener('click',()=>redeemItem(b.getAttribute('data-redeem')));
   });
-
-  // pending redemptions
+  // unlocked items list
   const wrap=document.getElementById('redemptionList');
-  if(state.redemptions.length===0){ wrap.innerHTML=""; return; }
-  wrap.innerHTML = `<div class="redemptions"><h3>Your redemptions</h3>` +
-    state.redemptions.slice().reverse().map(r=>{
-      const item=REWARDS.find(i=>i.id===r.itemId) || {art:"🎁",name:r.itemId};
-      return `<div class="redemption"><span class="ra">${item.art}</span>
-        <span class="rn">${item.name}</span><span class="rs">${r.status}</span></div>`;
-    }).join("") + `</div>`;
+  const unlocked = REWARDS.filter(i=>state.owned.includes(i.id));
+  if(unlocked.length===0){ wrap.innerHTML=""; return; }
+  wrap.innerHTML = `<div class="redemptions"><h3>Unlocked</h3>` +
+    unlocked.map(item=>`<div class="redemption">
+      <span class="ra">${item.art}</span>
+      <span class="rn">${item.name}</span>
+      <span class="rs">Owned</span>
+    </div>`).join("") + `</div>`;
 }
 
 async function redeemItem(id){
   const item = REWARDS.find(i=>i.id===id);
   if(!item) return;
+  if(state.owned.includes(id)){ toast("Already unlocked"); return; }
   if(state.points < item.cost){ toast("Not enough points"); return; }
-  if(!confirm(`Redeem ${item.cost.toLocaleString()} points for a ${item.name}? We'll contact you to arrange shipping.`)) return;
   state.points -= item.cost;
-  state.redemptions.push({ itemId:id, date:new Date().toISOString(), status:"pending" });
+  state.owned.push(id);
   await save();
   tweenCounter(displayedPoints, state.points, 400);
   renderAll();
-  toast(item.name + " redeemed — check Rewards for status");
-  /* PRODUCTION TODO: a real redemption must be validated + recorded by a
-     Cloud Function (so points can't be faked client-side), collect a
-     shipping address, and notify your admin console to fulfill + mark
-     shipped. Heads-up: if one person's prizes total ~$600+ in a year you
-     may owe them a 1099 — track redemption value per user. */
+  toast(item.name + " unlocked!");
 }
 
 /* ============================================================
