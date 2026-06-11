@@ -260,6 +260,48 @@
   .card.native .creative{height:62px;border-radius:12px;margin-bottom:6px;background:linear-gradient(135deg,var(--surface-2),var(--line));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;font-family:'Space Mono'}
   .card.native .adcta{margin-top:8px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);font-weight:700;font-size:13px;padding:9px;border-radius:11px;cursor:pointer;font-family:'Inter';text-align:center}
 
+  /* ---------- challenges tab ---------- */
+  .streak-bar{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#2d1a08,#3a2205);border:1px solid #6b3d0a;border-radius:14px;padding:14px 16px;margin-bottom:16px}
+  .streak-fire{font-size:24px}
+  #streakLabel{flex:1;font-weight:700;font-size:15px;color:#FFB347}
+  .streak-pts{font-family:'Space Mono';font-size:13px;color:#FFB347;font-weight:700}
+  .task-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .1s,border-color .15s}
+  .task-card:active{transform:scale(.98)}
+  .task-card.done{opacity:.6;cursor:default;border-color:var(--good)}
+  .task-card.done:active{transform:none}
+  .task-icon{font-size:28px;flex-shrink:0;width:44px;text-align:center}
+  .task-info{flex:1}
+  .task-name{font-weight:700;font-size:15px;margin-bottom:2px}
+  .task-desc{color:var(--muted);font-size:12.5px}
+  .task-pts{font-family:'Space Mono';font-weight:700;font-size:14px;color:var(--gold);white-space:nowrap}
+  .task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .task-card.done .task-check{background:var(--good);border-color:var(--good)}
+  .week-bar{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:6px}
+  .week-title{font-weight:700;font-size:13px;margin-bottom:10px}
+  .week-dots{display:flex;gap:6px;margin-bottom:8px}
+  .week-dot{flex:1;height:10px;border-radius:99px;background:var(--surface-2)}
+  .week-dot.filled{background:var(--gold)}
+  .week-dot.today{background:var(--coral)}
+  .week-sub{color:var(--muted);font-size:12px}
+  .game-scrim{position:fixed;inset:0;z-index:55;background:rgba(8,5,12,.88);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px}
+  .game-scrim.show{display:flex}
+  .game-box{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:28px;text-align:center;animation:pop .3s ease}
+  .game-box h3{font-family:'Bricolage Grotesque';font-weight:800;font-size:22px;margin-bottom:6px}
+  .game-sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+  .game-q{font-size:22px;font-weight:700;margin-bottom:16px;line-height:1.4}
+  .game-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .game-opt{background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-size:15px;font-weight:600;padding:14px;border-radius:12px;cursor:pointer;font-family:'Inter';transition:background .15s,border-color .15s}
+  .game-opt:hover{border-color:var(--coral)}
+  .game-opt.correct{background:#1a3d2a;border-color:var(--good);color:var(--good)}
+  .game-opt.wrong{background:#3d1a1a;border-color:var(--coral);color:var(--coral)}
+  .game-input{width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);font-size:20px;font-weight:700;padding:14px;border-radius:12px;text-align:center;font-family:'Space Mono';outline:none;margin-bottom:12px}
+  .game-btn{width:100%;border:none;background:var(--coral);color:#fff;font-weight:700;font-size:15px;padding:15px;border-radius:13px;cursor:pointer;font-family:'Inter';margin-top:8px}
+  .game-btn:disabled{opacity:.4;cursor:not-allowed}
+  .game-result{font-size:18px;font-weight:700;margin:12px 0 4px}
+  .game-result.win{color:var(--good)}
+  .game-result.lose{color:var(--coral)}
+  .spin-wheel{font-size:80px;margin:10px 0;display:inline-block;transition:transform 1s cubic-bezier(.17,.67,.35,1.2)}
+
   /* ---------- rewards catalog ---------- */
   .card .reward-art{height:72px;border-radius:12px;margin-bottom:6px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:38px}
   .card .pts{display:flex;align-items:center;gap:6px;font-family:'Space Mono';font-weight:700;font-size:14px;color:var(--gold)}
@@ -344,6 +386,29 @@
     </section>
 
     <!-- ============ PRIZES (draw) ============ -->
+    <!-- ============ CHALLENGES ============ -->
+    <section class="view" id="view-challenges">
+      <h2 class="sec-head">Challenges</h2>
+      <p class="sec-sub" id="challengesSub">Complete daily tasks to earn Grind Points. Resets at midnight.</p>
+
+      <!-- Streak banner -->
+      <div class="streak-bar" id="streakBar">
+        <span class="streak-fire">🔥</span>
+        <span id="streakLabel">0 day streak</span>
+        <span class="streak-pts" id="streakBonus"></span>
+      </div>
+
+      <!-- Task grid -->
+      <div id="taskList"></div>
+
+      <!-- Weekly progress -->
+      <div class="week-bar" id="weekBar">
+        <div class="week-title">This week</div>
+        <div class="week-dots" id="weekDots"></div>
+        <div class="week-sub" id="weekSub">Check in 7 days for a bonus</div>
+      </div>
+    </section>
+
     <section class="view" id="view-prizes">
       <h2 class="sec-head">Rewards</h2>
       <p class="sec-sub">Spend Grind Points on digital themes, badges, and premium unlocks.</p>
@@ -419,6 +484,10 @@
       <svg viewBox="0 0 24 24"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1z"/></svg>
       Stuff
     </button>
+    <button class="tab" data-tab="challenges">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Tasks
+    </button>
     <button class="tab" data-tab="prizes" id="tabPrizes">
       <svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7S9 7 8 5.5 9 3 12 7zm0 0s3 0 4-1.5S15 3 12 7z"/></svg>
       Rewards
@@ -437,6 +506,17 @@
 </div>
 
 <!-- login screen -->
+<!-- mini-game modal -->
+<div class="game-scrim" id="gameScrim">
+  <div class="game-box">
+    <h3 id="gameTitle">Challenge</h3>
+    <p class="game-sub" id="gameSub"></p>
+    <div class="game-content" id="gameContent"></div>
+    <div class="game-result" id="gameResult"></div>
+    <button class="game-btn" id="gameClose">Close</button>
+  </div>
+</div>
+
 <!-- ad modal -->
 <div class="scrim" id="adScrim">
   <div class="ad">
@@ -581,7 +661,7 @@ const CATALOG = [
    STATE  +  PERSISTENCE
    ============================================================ */
 let useFirebase = false, db = null, auth = null, uid = null, userRef = null;
-let state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[] };
+let state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[], streak:0, lastCheckIn:"", weekCheckins:[], tasksDone:{} };
 
 // session-level ad pacing (not persisted — resets each launch by design)
 let adFreq = { rewardedSinceInterstitial:0, lastInterstitialTs:0, lastRewardedTs:0, hiddenTs:0 };
@@ -831,7 +911,7 @@ function tweenCounter(from,to,ms){
 /* ============================================================
    RENDER
    ============================================================ */
-function renderAll(){ renderGrind(); renderBalance(); renderShop(); renderStuff(); renderRewards(); renderProfile(); }
+function renderAll(){ renderGrind(); renderBalance(); renderShop(); renderStuff(); renderRewards(); renderChallenges(); renderProfile(); }
 
 function renderBalance(){
   document.getElementById('balVal').textContent = state.points.toLocaleString();
@@ -1063,6 +1143,529 @@ async function redeemItem(id){
   tweenCounter(displayedPoints, state.points, 400);
   renderAll();
   toast(item.name + " unlocked!");
+}
+
+/* ============================================================
+   CHALLENGES ENGINE — 17 daily tasks, streaks, weekly bonus
+   ============================================================ */
+
+// Task definitions — seeded daily so everyone gets the same 5 tasks per day
+const ALL_TASKS = [
+  { id:"checkin",    icon:"✅", name:"Daily Check-in",     desc:"Show up today",                    pts:50,   type:"instant" },
+  { id:"spin",       icon:"🎡", name:"Spin the Wheel",     desc:"Spin for random points",            pts:0,    type:"spin" },
+  { id:"math",       icon:"🧮", name:"Math Challenge",     desc:"Solve a random equation",           pts:150,  type:"math" },
+  { id:"scramble",   icon:"🔤", name:"Word Scramble",      desc:"Unscramble the word",               pts:120,  type:"scramble" },
+  { id:"trivia",     icon:"🎯", name:"Trivia Question",    desc:"Answer correctly to earn",          pts:100,  type:"trivia" },
+  { id:"color",      icon:"🎨", name:"Color Match",        desc:"Pick the matching color name",      pts:80,   type:"color" },
+  { id:"memory",     icon:"🃏", name:"Memory Flip",        desc:"Match the emoji pairs",             pts:130,  type:"memory" },
+  { id:"sequence",   icon:"🔢", name:"Number Sequence",    desc:"What number comes next?",           pts:110,  type:"sequence" },
+  { id:"reaction",   icon:"⚡", name:"Reaction Time",      desc:"Tap when you see it!",              pts:90,   type:"reaction" },
+  { id:"riddle",     icon:"🧩", name:"Emoji Riddle",       desc:"Guess the phrase from emojis",      pts:140,  type:"riddle" },
+  { id:"geography",  icon:"🗺️", name:"Geography Quiz",     desc:"Know your world?",                  pts:120,  type:"geography" },
+  { id:"dice",       icon:"🎲", name:"Dice Challenge",     desc:"Roll higher than the target",       pts:70,   type:"dice" },
+  { id:"highlow",    icon:"🌡️", name:"High or Low",        desc:"Guess: higher or lower?",           pts:85,   type:"highlow" },
+  { id:"typing",     icon:"✍️", name:"Type the Word",      desc:"Type it fast and correctly",        pts:100,  type:"typing" },
+  { id:"pattern",    icon:"🔍", name:"Spot the Pattern",   desc:"Which emoji breaks the pattern?",   pts:130,  type:"pattern" },
+  { id:"flag",       icon:"🚩", name:"Flag Quiz",          desc:"Which country is this flag?",       pts:110,  type:"flag" },
+  { id:"streak7",    icon:"🔥", name:"7-Day Streak",       desc:"Check in 7 days in a row",          pts:500,  type:"milestone" },
+];
+
+// Pick 6 tasks for today using date as seed (consistent for all users)
+function getTodaysTasks(){
+  const seed = parseInt(todayStr().replace(/-/g,''));
+  const shuffled = [...ALL_TASKS].filter(t=>t.id!=='streak7');
+  // seeded shuffle
+  for(let i=shuffled.length-1;i>0;i--){
+    const j=(seed*(i+1))%shuffled.length;
+    [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+  }
+  const daily = shuffled.slice(0,6);
+  // Always include check-in as first task
+  if(!daily.find(t=>t.id==='checkin')) daily[0]=ALL_TASKS.find(t=>t.id==='checkin');
+  // Add streak milestone if user has 6+ day streak
+  if(state.streak>=6 && !state.tasksDone['streak7_'+todayStr()]){
+    daily.push(ALL_TASKS.find(t=>t.id==='streak7'));
+  }
+  return daily;
+}
+
+function renderChallenges(){
+  const tasks = getTodaysTasks();
+  // Reset daily tasks if new day
+  if(!state.tasksDone) state.tasksDone = {};
+
+  // Streak bar
+  document.getElementById('streakLabel').textContent = state.streak + ' day streak';
+  const mult = streakMultiplier();
+  document.getElementById('streakBonus').textContent = mult > 1 ? `×${mult} bonus active` : '';
+
+  // Week dots
+  const dots = document.getElementById('weekDots');
+  const today = new Date().getDay(); // 0=Sun
+  dots.innerHTML = ['S','M','T','W','T','F','S'].map((d,i)=>{
+    const filled = state.weekCheckins && state.weekCheckins.includes(i);
+    const isToday = i===today;
+    return `<div class="week-dot${filled?' filled':''}${isToday&&!filled?' today':''}"></div>`;
+  }).join('');
+  const doneCount = (state.weekCheckins||[]).length;
+  document.getElementById('weekSub').textContent = doneCount>=7
+    ? '🎉 Weekly bonus claimed!'
+    : `${doneCount}/7 days — ${7-doneCount} more for the weekly bonus`;
+
+  // Task list
+  const list = document.getElementById('taskList');
+  list.innerHTML = tasks.map(task=>{
+    const doneKey = task.id + '_' + todayStr();
+    const done = !!state.tasksDone[doneKey];
+    const pts = task.pts > 0 ? '+'+task.pts : 'up to +500';
+    return `<div class="task-card${done?' done':''}" data-task="${task.id}" ${done?'':'onclick="openTask(\''+task.id+'\')"'}>
+      <div class="task-icon">${task.icon}</div>
+      <div class="task-info">
+        <div class="task-name">${task.name}</div>
+        <div class="task-desc">${task.desc}</div>
+      </div>
+      <div class="task-pts">${pts} pts</div>
+      <div class="task-check">${done?'✓':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function streakMultiplier(){
+  if(state.streak>=30) return 3;
+  if(state.streak>=14) return 2;
+  if(state.streak>=7)  return 1.5;
+  return 1;
+}
+
+async function completeTask(taskId, ptsEarned){
+  const doneKey = taskId + '_' + todayStr();
+  if(state.tasksDone[doneKey]) return;
+  state.tasksDone[doneKey] = true;
+
+  // Update streak on check-in
+  if(taskId==='checkin' || taskId==='streak7'){
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yStr = yesterday.toISOString().slice(0,10);
+    if(state.lastCheckIn===yStr){
+      state.streak = (state.streak||0)+1;
+    } else if(state.lastCheckIn!==todayStr()){
+      state.streak = 1;
+    }
+    state.lastCheckIn = todayStr();
+    // Update week checkins
+    if(!state.weekCheckins) state.weekCheckins=[];
+    const dow = new Date().getDay();
+    if(!state.weekCheckins.includes(dow)) state.weekCheckins.push(dow);
+    // Weekly bonus
+    if(state.weekCheckins.length===7){
+      ptsEarned += 1000;
+      toast('🎉 Weekly bonus! +1,000 pts');
+    }
+  }
+
+  const mult = streakMultiplier();
+  const finalPts = Math.round(ptsEarned * mult);
+  state.points += finalPts;
+  state.lifetimePoints += finalPts;
+  await save();
+  animateEarn(finalPts);
+  renderAll();
+}
+
+/* ---- Mini-game engine ---- */
+const gameScrim = document.getElementById('gameScrim');
+const gameClose = document.getElementById('gameClose');
+let currentTask = null;
+
+gameClose.addEventListener('click', ()=>{
+  gameScrim.classList.remove('show');
+  currentTask = null;
+});
+
+function openTask(taskId){
+  const doneKey = taskId+'_'+todayStr();
+  if(state.tasksDone && state.tasksDone[doneKey]) return;
+  const task = ALL_TASKS.find(t=>t.id===taskId);
+  if(!task) return;
+  currentTask = taskId;
+  document.getElementById('gameTitle').textContent = task.name;
+  document.getElementById('gameSub').textContent = task.desc;
+  document.getElementById('gameResult').textContent = '';
+  document.getElementById('gameResult').className = 'game-result';
+  gameClose.textContent = 'Close';
+  gameClose.disabled = false;
+
+  switch(task.type){
+    case 'instant':   playInstant(task); break;
+    case 'spin':      playSpin(task); break;
+    case 'math':      playMath(task); break;
+    case 'scramble':  playScramble(task); break;
+    case 'trivia':    playTrivia(task); break;
+    case 'color':     playColor(task); break;
+    case 'sequence':  playSequence(task); break;
+    case 'reaction':  playReaction(task); break;
+    case 'riddle':    playRiddle(task); break;
+    case 'geography': playGeography(task); break;
+    case 'dice':      playDice(task); break;
+    case 'highlow':   playHighLow(task); break;
+    case 'typing':    playTyping(task); break;
+    case 'pattern':   playPattern(task); break;
+    case 'flag':      playFlag(task); break;
+    case 'memory':    playMemory(task); break;
+    case 'milestone': playMilestone(task); break;
+  }
+  gameScrim.classList.add('show');
+}
+
+function setGameContent(html){ document.getElementById('gameContent').innerHTML = html; }
+function showWin(pts){ const el=document.getElementById('gameResult'); el.textContent=`+${pts} pts earned!`; el.className='game-result win'; gameClose.textContent='Claim points'; }
+function showLose(msg){ const el=document.getElementById('gameResult'); el.textContent=msg||'Not quite — try again tomorrow'; el.className='game-result lose'; }
+
+// INSTANT (check-in)
+function playInstant(task){
+  setGameContent(`<div style="font-size:64px;margin:10px 0">✅</div><p style="color:var(--muted)">Tap below to claim your daily check-in points.</p>`);
+  gameClose.textContent = 'Check in (+'+task.pts+' pts)';
+  gameClose.onclick = async()=>{ await completeTask(task.id, task.pts); gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); };
+}
+
+// SPIN
+function playSpin(task){
+  const prizes=[50,75,100,150,200,250,300,400,500];
+  setGameContent(`<span class="spin-wheel" id="spinWheel">🎡</span><p style="color:var(--muted);margin-top:8px">Tap Spin to try your luck!</p>`);
+  gameClose.textContent='Spin!';
+  gameClose.onclick=()=>{
+    const prize=prizes[Math.floor(Math.random()*prizes.length)];
+    const wheel=document.getElementById('spinWheel');
+    wheel.classList.add('spinning');
+    gameClose.disabled=true;
+    setTimeout(async()=>{
+      wheel.classList.remove('spinning');
+      showWin(prize);
+      await completeTask(task.id, prize);
+      gameClose.disabled=false;
+      gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); };
+    },1100);
+  };
+}
+
+// MATH
+function playMath(task){
+  const ops=['+','-','×'];
+  const op=ops[Math.floor(Math.random()*ops.length)];
+  let a,b,ans;
+  if(op==='+'){a=Math.floor(Math.random()*50)+1;b=Math.floor(Math.random()*50)+1;ans=a+b;}
+  else if(op==='-'){a=Math.floor(Math.random()*50)+20;b=Math.floor(Math.random()*20)+1;ans=a-b;}
+  else{a=Math.floor(Math.random()*12)+2;b=Math.floor(Math.random()*12)+2;ans=a*b;}
+  setGameContent(`<div class="game-q">${a} ${op} ${b} = ?</div><input class="game-input" id="mathAns" type="number" placeholder="Your answer" />`);
+  const check=()=>{
+    const val=parseInt(document.getElementById('mathAns').value);
+    if(val===ans){ showWin(task.pts); completeTask(task.id,task.pts); gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); }; }
+    else showLose(`Nope — the answer was ${ans}`);
+  };
+  document.getElementById('mathAns').addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+  gameClose.textContent='Submit';
+  gameClose.onclick=check;
+}
+
+// SCRAMBLE
+function playScramble(task){
+  const words=['GRIND','POINTS','BADGE','THEME','STREAK','UNLOCK','DAILY','BONUS','QUEST','CHALLENGE'];
+  const word=words[Math.floor(Math.random()*words.length)];
+  const scrambled=word.split('').sort(()=>Math.random()-.5).join('');
+  setGameContent(`<div class="game-q">Unscramble:<br><b style="color:var(--gold);letter-spacing:.2em">${scrambled}</b></div><input class="game-input" id="scrambleAns" type="text" placeholder="Your answer" style="text-transform:uppercase" />`);
+  const check=()=>{
+    const val=document.getElementById('scrambleAns').value.trim().toUpperCase();
+    if(val===word){ showWin(task.pts); completeTask(task.id,task.pts); gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); }; }
+    else showLose(`Nope — it was "${word}"`);
+  };
+  document.getElementById('scrambleAns').addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+  gameClose.textContent='Submit';
+  gameClose.onclick=check;
+}
+
+// TRIVIA
+function playTrivia(task){
+  const qs=[
+    {q:"What is the capital of France?",opts:["London","Paris","Berlin","Madrid"],a:1},
+    {q:"How many sides does a hexagon have?",opts:["5","6","7","8"],a:1},
+    {q:"What planet is closest to the Sun?",opts:["Venus","Earth","Mercury","Mars"],a:2},
+    {q:"What is 7 × 8?",opts:["54","56","58","62"],a:1},
+    {q:"Which ocean is the largest?",opts:["Atlantic","Indian","Arctic","Pacific"],a:3},
+    {q:"How many days in a leap year?",opts:["364","365","366","367"],a:2},
+    {q:"What color is a ruby?",opts:["Blue","Green","Red","Yellow"],a:2},
+    {q:"How many continents are there?",opts:["5","6","7","8"],a:2},
+    {q:"What is the largest mammal?",opts:["Elephant","Blue Whale","Giraffe","Hippo"],a:1},
+    {q:"What gas do plants absorb?",opts:["Oxygen","Nitrogen","Carbon Dioxide","Hydrogen"],a:2},
+  ];
+  const q=qs[Math.floor(Math.random()*qs.length)];
+  setGameContent(`<div class="game-q">${q.q}</div><div class="game-opts">${q.opts.map((o,i)=>`<button class="game-opt" data-i="${i}">${o}</button>`).join('')}</div>`);
+  gameClose.textContent='Close';
+  gameClose.onclick=()=>gameScrim.classList.remove('show');
+  document.querySelectorAll('.game-opt').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const i=parseInt(btn.getAttribute('data-i'));
+      document.querySelectorAll('.game-opt').forEach(b=>b.disabled=true);
+      if(i===q.a){ btn.classList.add('correct'); showWin(task.pts); await completeTask(task.id,task.pts); }
+      else{ btn.classList.add('wrong'); document.querySelectorAll('.game-opt')[q.a].classList.add('correct'); showLose('Wrong answer'); }
+    });
+  });
+}
+
+// COLOR
+function playColor(task){
+  const colors=[{name:'Red',hex:'#FF5470'},{name:'Gold',hex:'#FFC24B'},{name:'Teal',hex:'#5AD1B0'},{name:'Purple',hex:'#9B59B6'},{name:'Blue',hex:'#3498DB'},{name:'Orange',hex:'#E67E22'}];
+  const target=colors[Math.floor(Math.random()*colors.length)];
+  const opts=[target];
+  while(opts.length<4){ const c=colors[Math.floor(Math.random()*colors.length)]; if(!opts.find(o=>o.name===c.name)) opts.push(c); }
+  opts.sort(()=>Math.random()-.5);
+  setGameContent(`<div class="game-q">What color is this?</div><div style="width:80px;height:80px;border-radius:50%;background:${target.hex};margin:0 auto 16px"></div><div class="game-opts">${opts.map(o=>`<button class="game-opt" data-name="${o.name}">${o.name}</button>`).join('')}</div>`);
+  gameClose.textContent='Close';
+  gameClose.onclick=()=>gameScrim.classList.remove('show');
+  document.querySelectorAll('.game-opt').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      document.querySelectorAll('.game-opt').forEach(b=>b.disabled=true);
+      if(btn.getAttribute('data-name')===target.name){ btn.classList.add('correct'); showWin(task.pts); await completeTask(task.id,task.pts); }
+      else{ btn.classList.add('wrong'); showLose(`It was ${target.name}`); }
+    });
+  });
+}
+
+// SEQUENCE
+function playSequence(task){
+  const seqs=[[2,4,6,8],[1,3,6,10],[5,10,15,20],[1,2,4,8],[3,6,9,12],[10,8,6,4],[1,4,9,16],[2,6,12,20]];
+  const seq=seqs[Math.floor(Math.random()*seqs.length)];
+  const diffs=seq.map((v,i)=>i>0?v-seq[i-1]:null).filter(Boolean);
+  const isLinear=new Set(diffs).size===1;
+  let next;
+  if(isLinear) next=seq[seq.length-1]+diffs[0];
+  else if(seq[0]===1&&seq[1]===2&&seq[2]===4) next=seq[seq.length-1]*2; // geometric
+  else next=seq[seq.length-1]+(diffs[diffs.length-1]+2);
+  setGameContent(`<div class="game-q">${seq.join(', ')}, ?</div><input class="game-input" id="seqAns" type="number" placeholder="Next number" />`);
+  const check=()=>{
+    const val=parseInt(document.getElementById('seqAns').value);
+    if(val===next){ showWin(task.pts); completeTask(task.id,task.pts); gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); }; }
+    else showLose(`Nope — the answer was ${next}`);
+  };
+  document.getElementById('seqAns').addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+  gameClose.textContent='Submit'; gameClose.onclick=check;
+}
+
+// REACTION
+function playReaction(task){
+  setGameContent(`<div id="reactionTarget" style="font-size:80px;margin:10px 0;opacity:0;transition:opacity .1s">🎯</div><p id="reactionMsg" style="color:var(--muted)">Get ready...</p>`);
+  gameClose.disabled=true; gameClose.textContent='Waiting...';
+  const delay=1500+Math.random()*3000;
+  const start=setTimeout(()=>{
+    const target=document.getElementById('reactionTarget');
+    if(!target) return;
+    target.style.opacity='1';
+    document.getElementById('reactionMsg').textContent='TAP NOW!';
+    const appeared=Date.now();
+    gameClose.disabled=false; gameClose.textContent='TAP!';
+    gameClose.onclick=async()=>{
+      const ms=Date.now()-appeared;
+      const pts=ms<300?task.pts:ms<500?Math.round(task.pts*.75):ms<800?Math.round(task.pts*.5):Math.round(task.pts*.25);
+      showWin(pts);
+      document.getElementById('gameResult').textContent=`${ms}ms — ${pts} pts!`;
+      await completeTask(task.id,pts);
+      gameClose.disabled=false; gameClose.textContent='Claim';
+      gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); };
+    };
+  },delay);
+  // store so we can cancel if modal closed
+  gameClose._reactionTimer=start;
+}
+
+// RIDDLE
+function playRiddle(task){
+  const riddles=[
+    {q:"🐱 + 🐟 = ?",opts:["Dog food","Cat food","Bird food","Fish tank"],a:1},
+    {q:"☀️ + 🕶️ = ?",opts:["Night vision","Sunglasses","Moon","Rain"],a:1},
+    {q:"🎵 + 🎤 = ?",opts:["Movie","Concert","Radio","Dance"],a:1},
+    {q:"🔑 + 🚪 = ?",opts:["Lock","Open","Close","Window"],a:1},
+    {q:"⚽ + 🥅 = ?",opts:["Basketball","Goal","Rugby","Tennis"],a:1},
+    {q:"🌧️ + ☂️ = ?",opts:["Snow","Umbrella","Sun","Flood"],a:1},
+  ];
+  const r=riddles[Math.floor(Math.random()*riddles.length)];
+  setGameContent(`<div class="game-q">${r.q}</div><div class="game-opts">${r.opts.map((o,i)=>`<button class="game-opt" data-i="${i}">${o}</button>`).join('')}</div>`);
+  gameClose.textContent='Close'; gameClose.onclick=()=>gameScrim.classList.remove('show');
+  document.querySelectorAll('.game-opt').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      document.querySelectorAll('.game-opt').forEach(b=>b.disabled=true);
+      const i=parseInt(btn.getAttribute('data-i'));
+      if(i===r.a){ btn.classList.add('correct'); showWin(task.pts); await completeTask(task.id,task.pts); }
+      else{ btn.classList.add('wrong'); document.querySelectorAll('.game-opt')[r.a].classList.add('correct'); showLose('Wrong!'); }
+    });
+  });
+}
+
+// GEOGRAPHY
+function playGeography(task){
+  const qs=[
+    {q:"What is the capital of Japan?",opts:["Seoul","Beijing","Tokyo","Bangkok"],a:2},
+    {q:"Which country has the most people?",opts:["USA","India","China","Russia"],a:1},
+    {q:"What is the longest river?",opts:["Amazon","Mississippi","Nile","Yangtze"],a:2},
+    {q:"Which continent is Egypt in?",opts:["Asia","Europe","Africa","Middle East"],a:2},
+    {q:"What country is the Amazon rainforest mainly in?",opts:["Colombia","Peru","Brazil","Venezuela"],a:2},
+    {q:"What is the capital of Australia?",opts:["Sydney","Melbourne","Brisbane","Canberra"],a:3},
+  ];
+  const q=qs[Math.floor(Math.random()*qs.length)];
+  setGameContent(`<div class="game-q">${q.q}</div><div class="game-opts">${q.opts.map((o,i)=>`<button class="game-opt" data-i="${i}">${o}</button>`).join('')}</div>`);
+  gameClose.textContent='Close'; gameClose.onclick=()=>gameScrim.classList.remove('show');
+  document.querySelectorAll('.game-opt').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      document.querySelectorAll('.game-opt').forEach(b=>b.disabled=true);
+      const i=parseInt(btn.getAttribute('data-i'));
+      if(i===q.a){ btn.classList.add('correct'); showWin(task.pts); await completeTask(task.id,task.pts); }
+      else{ btn.classList.add('wrong'); document.querySelectorAll('.game-opt')[q.a].classList.add('correct'); showLose('Wrong!'); }
+    });
+  });
+}
+
+// DICE
+function playDice(task){
+  const target=Math.floor(Math.random()*4)+2; // target 2-5
+  setGameContent(`<div class="game-q">Roll higher than ${target}</div><div style="font-size:80px" id="diceResult">🎲</div>`);
+  gameClose.textContent='Roll!';
+  gameClose.onclick=async()=>{
+    const roll=Math.floor(Math.random()*6)+1;
+    document.getElementById('diceResult').textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1];
+    if(roll>target){ showWin(task.pts); await completeTask(task.id,task.pts); gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); }; }
+    else{ showLose(`Rolled ${roll} — needed more than ${target}`); gameClose.textContent='Close'; gameClose.onclick=()=>gameScrim.classList.remove('show'); }
+  };
+}
+
+// HIGH/LOW
+function playHighLow(task){
+  let secret=Math.floor(Math.random()*100)+1, guesses=3;
+  const render=()=>{
+    setGameContent(`<div class="game-q">Guess my number<br><small style="color:var(--muted);font-size:14px">1–100 · ${guesses} guess${guesses!==1?'es':''} left</small></div><input class="game-input" id="hlAns" type="number" min="1" max="100" placeholder="1–100" />`);
+    const check=()=>{
+      const val=parseInt(document.getElementById('hlAns').value);
+      if(isNaN(val)||val<1||val>100){ return; }
+      if(val===secret){ showWin(task.pts); completeTask(task.id,task.pts); gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); }; return; }
+      guesses--;
+      if(guesses===0){ showLose(`It was ${secret}`); gameClose.textContent='Close'; gameClose.onclick=()=>gameScrim.classList.remove('show'); return; }
+      const hint=val<secret?'Too low!':'Too high!';
+      document.getElementById('hlAns').value='';
+      document.getElementById('hlAns').placeholder=hint+' '+guesses+' left';
+    };
+    document.getElementById('hlAns').addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+    gameClose.textContent='Guess'; gameClose.onclick=check;
+  };
+  render();
+}
+
+// TYPING
+function playTyping(task){
+  const words=['GRINDPOINTS','CHALLENGEACCEPTED','DAILYBONUS','STREAKMASTER','POINTSBANKED'];
+  const word=words[Math.floor(Math.random()*words.length)];
+  let start=null;
+  setGameContent(`<div class="game-q" style="font-size:18px;letter-spacing:.1em">${word}</div><input class="game-input" id="typingInput" type="text" placeholder="Type it here" autocomplete="off" autocorrect="off" spellcheck="false" />`);
+  const input=document.getElementById('typingInput');
+  input.addEventListener('focus',()=>{ if(!start) start=Date.now(); });
+  const check=()=>{
+    if(input.value===word){
+      const ms=Date.now()-start;
+      const pts=ms<3000?task.pts:ms<5000?Math.round(task.pts*.75):Math.round(task.pts*.5);
+      showWin(pts); completeTask(task.id,pts);
+      gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); };
+    } else if(input.value.length>=word.length){
+      showLose('Not quite — try again tomorrow');
+      gameClose.textContent='Close'; gameClose.onclick=()=>gameScrim.classList.remove('show');
+    }
+  };
+  input.addEventListener('input',check);
+  gameClose.textContent='Submit'; gameClose.onclick=check;
+}
+
+// PATTERN
+function playPattern(task){
+  const sets=[
+    {seq:['🔴','🔴','🔴','🟡'],odd:3},
+    {seq:['⭐','⭐','🌙','⭐'],odd:2},
+    {seq:['🐶','🐱','🐶','🐶'],odd:1},
+    {seq:['🍎','🍊','🍎','🍎'],odd:1},
+    {seq:['🎵','🎵','🎸','🎵'],odd:2},
+  ];
+  const s=sets[Math.floor(Math.random()*sets.length)];
+  setGameContent(`<div class="game-q">Which one breaks the pattern?</div><div class="game-opts">${s.seq.map((e,i)=>`<button class="game-opt" data-i="${i}" style="font-size:28px">${e}</button>`).join('')}</div>`);
+  gameClose.textContent='Close'; gameClose.onclick=()=>gameScrim.classList.remove('show');
+  document.querySelectorAll('.game-opt').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      document.querySelectorAll('.game-opt').forEach(b=>b.disabled=true);
+      const i=parseInt(btn.getAttribute('data-i'));
+      if(i===s.odd){ btn.classList.add('correct'); showWin(task.pts); await completeTask(task.id,task.pts); }
+      else{ btn.classList.add('wrong'); document.querySelectorAll('.game-opt')[s.odd].classList.add('correct'); showLose('Wrong!'); }
+    });
+  });
+}
+
+// FLAG
+function playFlag(task){
+  const flags=[
+    {flag:'🇺🇸',opts:['USA','Canada','UK','Australia'],a:0},
+    {flag:'🇯🇵',opts:['China','Korea','Japan','Vietnam'],a:2},
+    {flag:'🇧🇷',opts:['Argentina','Brazil','Colombia','Chile'],a:1},
+    {flag:'🇩🇪',opts:['France','Austria','Germany','Switzerland'],a:2},
+    {flag:'🇫🇷',opts:['Italy','Spain','France','Belgium'],a:2},
+    {flag:'🇨🇦',opts:['USA','Australia','Canada','New Zealand'],a:2},
+    {flag:'🇦🇺',opts:['New Zealand','Australia','UK','Ireland'],a:1},
+    {flag:'🇲🇽',opts:['Brazil','Mexico','Colombia','Argentina'],a:1},
+  ];
+  const f=flags[Math.floor(Math.random()*flags.length)];
+  setGameContent(`<div style="font-size:80px;margin:8px 0">${f.flag}</div><div class="game-q" style="font-size:18px">Which country is this?</div><div class="game-opts">${f.opts.map((o,i)=>`<button class="game-opt" data-i="${i}">${o}</button>`).join('')}</div>`);
+  gameClose.textContent='Close'; gameClose.onclick=()=>gameScrim.classList.remove('show');
+  document.querySelectorAll('.game-opt').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      document.querySelectorAll('.game-opt').forEach(b=>b.disabled=true);
+      const i=parseInt(btn.getAttribute('data-i'));
+      if(i===f.a){ btn.classList.add('correct'); showWin(task.pts); await completeTask(task.id,task.pts); }
+      else{ btn.classList.add('wrong'); document.querySelectorAll('.game-opt')[f.a].classList.add('correct'); showLose('Wrong!'); }
+    });
+  });
+}
+
+// MEMORY
+function playMemory(task){
+  const pairs=['🎯','🎲','⚡','🏆','💎','🔥'];
+  const cards=[...pairs,...pairs].sort(()=>Math.random()-.5);
+  let flipped=[],matched=0,locked=false;
+  const render=()=>{
+    setGameContent(`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${
+      cards.map((c,i)=>`<button class="game-opt" data-i="${i}" style="font-size:22px;padding:12px;aspect-ratio:1" data-val="${c}" data-shown="0">?</button>`).join('')
+    }</div>`);
+    document.querySelectorAll('.game-opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(locked||btn.getAttribute('data-shown')==='1') return;
+        btn.textContent=btn.getAttribute('data-val');
+        btn.setAttribute('data-shown','1');
+        flipped.push(btn);
+        if(flipped.length===2){
+          locked=true;
+          if(flipped[0].getAttribute('data-val')===flipped[1].getAttribute('data-val')){
+            flipped[0].classList.add('correct'); flipped[1].classList.add('correct');
+            matched++; flipped=[]; locked=false;
+            if(matched===pairs.length){ showWin(task.pts); completeTask(task.id,task.pts); gameClose.textContent='Claim'; gameClose.onclick=()=>{ gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); }; }
+          } else {
+            setTimeout(()=>{
+              flipped.forEach(b=>{ b.textContent='?'; b.setAttribute('data-shown','0'); });
+              flipped=[]; locked=false;
+            },800);
+          }
+        }
+      });
+    });
+  };
+  render();
+  gameClose.textContent='Give up'; gameClose.onclick=()=>gameScrim.classList.remove('show');
+}
+
+// MILESTONE
+function playMilestone(task){
+  setGameContent(`<div style="font-size:64px;margin:10px 0">🔥</div><p style="font-size:16px;font-weight:700;color:var(--gold)">7-Day Streak!</p><p style="color:var(--muted);margin-top:8px">You checked in 7 days in a row. Claim your bonus!</p>`);
+  gameClose.textContent=`Claim +${task.pts} pts`;
+  gameClose.onclick=async()=>{ await completeTask(task.id,task.pts); gameScrim.classList.remove('show'); gameClose.onclick=()=>gameScrim.classList.remove('show'); };
 }
 
 /* ============================================================
