@@ -671,7 +671,7 @@ const STORE = [
   { id:"unlock_streak",  type:"unlock", tag:"Unlock",     name:"Streak Flair",   desc:"Animated fire on your streak counter.",    cost:2000,   art:"🔥", swatch:"linear-gradient(135deg,#FFC24B,#FF5470)" },
   { id:"unlock_pro",     type:"unlock", tag:"Unlock",     name:"Pro Profile",    desc:"Gold border + Pro tag on your profile.",   cost:3000,   art:"🏆", swatch:"linear-gradient(135deg,#FFD700,#6a3bb3)" },
   { id:"unlock_stats",   type:"unlock", tag:"Unlock",     name:"Stats+",         desc:"Detailed lifetime stats and charts.",      cost:2500,   art:"📊", swatch:"linear-gradient(135deg,#54C9FF,#0090FF)" },
-  { id:"unlock_2x",      type:"unlock", tag:"Unlock",     name:"2× Boost",       desc:"Double ad points for 24 hours.",           cost:1200,   art:"⚡", swatch:"linear-gradient(135deg,#FFE66D,#FF6B6B)" },
+  { id:"unlock_2x",      type:"unlock", tag:"Unlock",     name:"2× Boost",       desc:"Double challenge points for 24 hours.",   cost:1200,   art:"⚡", swatch:"linear-gradient(135deg,#FFE66D,#FF6B6B)" },
   { id:"unlock_dark",    type:"unlock", tag:"Unlock",     name:"OLED Dark",      desc:"Extra-dark OLED-optimized overlay.",       cost:1500,   art:"🌑", swatch:"linear-gradient(135deg,#111,#000)" },
   { id:"unlock_confetti",type:"unlock", tag:"Unlock",     name:"Confetti Pop",   desc:"Confetti burst when you earn points.",     cost:800,    art:"🎊", swatch:"linear-gradient(135deg,#FF85A1,#FFE66D)" },
   { id:"unlock_soundfx", type:"unlock", tag:"Unlock",     name:"Sound FX",       desc:"Satisfying sounds on point earn.",         cost:600,    art:"🔊", swatch:"linear-gradient(135deg,#B673FF,#54C9FF)" },
@@ -861,30 +861,48 @@ async function signOut(){
   toast("Signed out");
 }
 
-// Delete account — removes Firestore data then deletes Firebase Auth account
+// Delete account — routes through native bridge on Android, web Firebase on browser
 async function deleteAccount(){
   if(!confirm("Permanently delete your account and all data? This cannot be undone.")) return;
   const btn = document.getElementById('deleteAcctBtn');
   if(btn){ btn.disabled=true; btn.textContent="Deleting…"; }
   try{
+    const isNative = navigator.userAgent.includes('AdGrindApp');
+    if(isNative && window.AdMobBridge && typeof AdMobBridge.deleteAccount==="function"){
+      // Native bridge deletes the real Firebase Auth account + Firestore doc
+      AdMobBridge.deleteAccount("onNativeDeleteSuccess()", "onNativeDeleteError()");
+      return; // callbacks handle the rest
+    }
+    // Web flow — delete Firestore doc then Firebase Auth user
     if(userRef){ await userRef.delete().catch(()=>{}); }
     const user = auth ? auth.currentUser : null;
     if(user){ await user.delete(); }
-    state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[], streak:0, lastCheckIn:"", weekCheckins:[], tasksDone:{} };
-    userRef = null; uid = null; useFirebase = false;
-    renderAll();
-    toast("Account and data permanently deleted.");
-    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.getAttribute('data-tab')==='profile'));
-    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-profile'));
+    onNativeDeleteSuccess();
   }catch(e){
     if(btn){ btn.disabled=false; btn.textContent="Delete account & data"; }
     if(e.code==='auth/requires-recent-login'){
       toast("Sign out and sign back in first, then try deleting again.");
     } else {
-      toast("Deletion failed. Email support@creasocamps.com for help.");
+      toast("Deletion failed. Email kirkcreason@creaso-norsetech.com for help.");
     }
   }
 }
+
+// Called by native bridge OR web flow on successful deletion
+window.onNativeDeleteSuccess = function(){
+  state = { points:0, lifetimePoints:0, adsWatched:0, dailyAdsWatched:0, lastAdDate:"", owned:[], equipped:null, redemptions:[], streak:0, lastCheckIn:"", weekCheckins:[], tasksDone:{} };
+  userRef = null; uid = null; useFirebase = false;
+  renderAll();
+  toast("Account and data permanently deleted.");
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.getAttribute('data-tab')==='profile'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-profile'));
+};
+
+window.onNativeDeleteError = function(){
+  const btn = document.getElementById('deleteAcctBtn');
+  if(btn){ btn.disabled=false; btn.textContent="Delete account & data"; }
+  toast("Deletion failed. Sign out and back in, then try again.");
+};
 
 async function save(){
   if(useFirebase && userRef){
@@ -1089,16 +1107,20 @@ function renderProfile(){
   document.getElementById('statBal').textContent = state.points.toLocaleString();
   document.getElementById('statItems').textContent = state.owned.length;
 
-  const signedIn = useFirebase && auth && auth.currentUser && !auth.currentUser.isAnonymous;
+  // On Android, native auth is real even though WebView session is anonymous
+  const nativeSignedIn = window.nativeAuth && window.nativeAuth.uid && !window.nativeAuth.isAnonymous;
+  const webSignedIn = useFirebase && auth && auth.currentUser && !auth.currentUser.isAnonymous;
+  const signedIn = nativeSignedIn || webSignedIn;
+
   document.getElementById('accountSignedIn').style.display = signedIn ? "" : "none";
   document.getElementById('accountSignedOut').style.display = signedIn ? "none" : "";
 
   if(signedIn){
-    const user = auth.currentUser;
-    document.getElementById('playerId').textContent = user.email || user.uid;
+    const email = (window.nativeAuth && window.nativeAuth.email) || (auth && auth.currentUser && auth.currentUser.email) || uid || "—";
+    document.getElementById('playerId').textContent = email;
     const pill = document.getElementById('modePill');
     pill.classList.add('live');
-    document.getElementById('modeText').textContent = "Signed in · Saving to Firebase";
+    document.getElementById('modeText').textContent = useFirebase ? "Signed in · Saving to Firebase" : "Signed in";
   } else {
     const pill2 = document.getElementById('modePill2');
     if(useFirebase){ pill2.classList.add('live'); document.getElementById('modeText2').textContent = "Saving to Firebase"; }
@@ -1786,10 +1808,12 @@ function showAppOpen(){
 function updateBanner(activeTab){
   const show = ADS.bannerScreens.includes(activeTab);
   document.body.classList.toggle('banner-on', show);
-  // Native banners are always persistent — only update web CSS padding
-  // Don't call hideBanner() as that would remove the native banner
-  if(window.AdMobBridge && typeof AdMobBridge.showBanner==="function"){
-    AdMobBridge.showBanner("both"); // always show both
+  bannerEl.classList.toggle('show', show);
+  if(!window.AdMobBridge) return;
+  if(show && typeof AdMobBridge.showBanner==="function"){
+    AdMobBridge.showBanner("bottom");
+  } else if(!show && typeof AdMobBridge.hideBanner==="function"){
+    AdMobBridge.hideBanner();
   }
 }
 
@@ -1812,7 +1836,8 @@ document.querySelectorAll('.tab').forEach(tab=>{
     document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
     document.querySelector('.views').scrollTop=0;
     updateBanner(name);
-    maybeShowInterstitial();
+    // Interstitials removed from tab switching — basic navigation is not
+    // a clear content transition. Interstitials only fire after rewarded ads.
   });
 });
 
