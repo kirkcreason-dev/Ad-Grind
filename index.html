@@ -768,8 +768,8 @@ function showRewardedAd(){
   // Native wrapper bridge takes priority when present
   if(window.AdMobBridge && typeof window.AdMobBridge.showRewarded==="function"){
     window.AdMobBridge.showRewarded(
-      ()=>creditAdReward(),                  // onReward
-      ()=>toast("Ad not finished — no points") // onDismiss without reward
+      "creditAdReward()",                  // onReward — evaluated as JS by native
+      "console.log('ad dismissed')"        // onDismiss
     );
     return;
   }
@@ -1078,12 +1078,12 @@ function maybeShowInterstitial(){
   if((now - adFreq.lastRewardedTs)/1000 < 3) return; // breathing room after rewarded
   adFreq.rewardedSinceInterstitial = 0;
   adFreq.lastInterstitialTs = now;
-  if(window.AdMobBridge && typeof AdMobBridge.showInterstitial==="function"){ AdMobBridge.showInterstitial(()=>{}); return; }
+  if(window.AdMobBridge && typeof AdMobBridge.showInterstitial==="function"){ AdMobBridge.showInterstitial("console.log('interstitial done')"); return; }
   showFullscreenAd("Sponsored");
 }
 
 function showAppOpen(){
-  if(window.AdMobBridge && typeof AdMobBridge.showAppOpen==="function"){ AdMobBridge.showAppOpen(()=>{}); return; }
+  if(window.AdMobBridge && typeof AdMobBridge.showAppOpen==="function"){ AdMobBridge.showAppOpen("console.log('appopen done')"); return; }
   showFullscreenAd("Sponsored · App Open");
 }
 
